@@ -1,0 +1,69 @@
+﻿Subject,GraphType,Division,Response,SuperSession,Presentation,CD,FD,RD,ED,FDL
+T003,GroupedBar,Post Task,Mental Demand,10,8,14,19,15,2,0
+T003,GroupedBar,Post Task,Physical Demand,5,11,2,11,14,4,7
+T003,GroupedBar,Post Task,Temporal Demand,10,,11,18,6,12,3
+T003,GroupedBar,Post Task,Performance,2,11,4,10,3,12,9
+T003,GroupedBar,Post Task,Effort,5,11,14,18,7,3,9
+T003,GroupedBar,Post Task,Frustration,2,15,4,12,4,10,0
+T003,GroupedBar,Pre Exp,Physical Demand,5,11,2,11,14,4,7
+T003,GroupedBar,Pre Exp,Temporal Demand,10,,11,18,6,12,3
+T003,GroupedBar,Pre Exp,Performance,2,11,4,10,3,12,9
+T003,GroupedBar,Pre Exp,Effort,5,11,14,18,7,3,9
+T003,GroupedBar,Pre Exp,Frustration,2,15,4,12,4,10,0
+T003,GroupedBar,Post Exp,Mental Demand,10,8,14,19,15,2,0
+T003,GroupedBar,Post Exp,Physical Demand,5,11,2,11,14,4,7
+T003,GroupedBar,Post Exp,Temporal Demand,10,,11,18,6,12,3
+T003,GroupedBar,Post Exp,Performance,2,11,4,10,3,12,9
+T003,GroupedBar,Post Exp,Effort,5,11,14,18,7,3,9
+T003,GroupedBar,Post Exp,Frustration,2,15,4,12,4,10,0
+T003,GroupedBar,Post Task,Mental Demand,10,8,14,19,15,2,0
+T003,GroupedBar,Post Task,Physical Demand,5,11,2,11,14,4,7
+T003,GroupedBar,Post Task,Temporal Demand,10,,11,18,6,12,3
+T003,GroupedBar,Post Task,Performance,2,11,4,10,3,12,9
+T003,GroupedBar,Post Task,Effort,5,11,14,18,7,3,9
+T003,GroupedBar,Post Task,Frustration,2,15,4,12,4,10,0
+T003,GroupedBar,Pre Exp,Mental Demand,10,8,14,19,15,2,0
+T003,GroupedBar,Pre Exp,Physical Demand,5,11,2,11,14,4,7
+T003,GroupedBar,Pre Exp,Temporal Demand,10,,11,18,6,12,3
+T003,GroupedBar,Pre Exp,Performance,2,11,4,10,3,12,9
+T003,GroupedBar,Pre Exp,Effort,5,11,14,18,7,3,9
+T003,GroupedBar,Post Exp,Frustration,2,15,4,12,4,10,0
+T003,GroupedBar,Post Exp,Physical Demand,5,11,2,11,14,4,7
+T003,GroupedBar,Post Exp,Temporal Demand,10,,11,18,6,12,3
+T003,GroupedBar,Post Exp,Performance,2,11,4,10,3,12,9
+T003,GroupedBar,Post Exp,Effort,5,11,14,18,7,3,9
+T003,GroupedBar,Post Exp,Frustration,2,15,4,12,4,10,0
+T005,GroupedBar,Post Task,Mental Demand,10,8,14,19,15,2,0
+T005,GroupedBar,Post Task,Physical Demand,5,11,2,11,14,4,7
+T005,GroupedBar,Post Task,Temporal Demand,10,,11,18,6,12,3
+T005,GroupedBar,Post Task,Performance,2,11,4,10,3,12,9
+T005,GroupedBar,Post Task,Effort,5,11,14,18,7,3,9
+T005,GroupedBar,Post Task,Frustration,2,15,4,12,4,10,0
+T005,GroupedBar,Pre Exp,Physical Demand,5,11,2,11,14,4,7
+T005,GroupedBar,Pre Exp,Temporal Demand,10,,11,18,6,12,3
+T005,GroupedBar,Pre Exp,Performance,2,11,4,10,3,12,9
+T005,GroupedBar,Pre Exp,Effort,5,11,14,18,7,3,9
+T005,GroupedBar,Pre Exp,Frustration,2,15,4,12,4,10,0
+T005,GroupedBar,Post Exp,Mental Demand,10,8,14,19,15,2,0
+T005,GroupedBar,Post Exp,Physical Demand,5,11,2,11,14,4,7
+T005,GroupedBar,Post Exp,Temporal Demand,10,,11,18,6,12,3
+T005,GroupedBar,Post Exp,Performance,2,11,4,10,3,12,9
+T005,GroupedBar,Post Exp,Effort,5,11,14,18,7,3,9
+T005,GroupedBar,Post Exp,Frustration,2,15,4,12,4,10,0
+T005,GroupedBar,Post Task,Mental Demand,10,8,14,19,15,2,0
+T005,GroupedBar,Post Task,Physical Demand,5,11,2,11,14,4,7
+T005,GroupedBar,Post Task,Temporal Demand,10,,11,18,6,12,3
+T005,GroupedBar,Post Task,Performance,2,11,4,10,3,12,9
+T005,GroupedBar,Post Task,Effort,5,11,14,18,7,3,9
+T005,GroupedBar,Post Task,Frustration,2,15,4,12,4,10,0
+T005,GroupedBar,Pre Exp,Mental Demand,10,8,14,19,15,2,0
+T005,GroupedBar,Pre Exp,Physical Demand,5,11,2,11,14,4,7
+T005,GroupedBar,Pre Exp,Temporal Demand,10,,11,18,6,12,3
+T005,GroupedBar,Pre Exp,Performance,2,11,4,10,3,12,9
+T005,GroupedBar,Pre Exp,Effort,5,11,14,18,7,3,9
+T005,GroupedBar,Post Exp,Frustration,2,15,4,12,4,10,0
+T005,GroupedBar,Post Exp,Physical Demand,5,11,2,11,14,4,7
+T005,GroupedBar,Post Exp,Temporal Demand,10,,11,18,6,12,3
+T005,GroupedBar,Post Exp,Performance,2,11,4,10,3,12,9
+T005,GroupedBar,Post Exp,Effort,5,11,14,18,7,3,9
+T005,GroupedBar,Post Exp,Frustration,2,15,4,12,4,10,0

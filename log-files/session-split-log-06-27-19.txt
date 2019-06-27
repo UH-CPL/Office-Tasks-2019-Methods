@@ -1,0 +1,104 @@
+Group1-T003-SuperSession: SUCCESSFUL
+Group1-T005-SuperSession: SUCCESSFUL
+Group1-T006-SuperSession: NOT PROCESSED
+Group1-T009-SuperSession: SUCCESSFUL
+Group1-T011-SuperSession: SUCCESSFUL
+Group1-T016-SuperSession: SUCCESSFUL
+Group1-T019-SuperSession: SUCCESSFUL
+Group1-T021-SuperSession: SUCCESSFUL
+Group1-T023-SuperSession: NOT PROCESSED
+Reason: Subject is discarded subject list!
+Group1-T031-SuperSession: SUCCESSFUL
+Group1-T032-SuperSession: SUCCESSFUL
+Group1-T035-SuperSession: SUCCESSFUL
+--- T037 has less than 5 sessions ---
+Group1-T037-SuperSession: SUCCESSFUL
+Group1-T043-SuperSession: NOT PROCESSED
+Group1-T046-SuperSession: SUCCESSFUL
+Group1-T047-SuperSession: SUCCESSFUL
+Group1-T051-SuperSession: SUCCESSFUL
+Group2-T061-SuperSession: SUCCESSFUL
+Group2-T062-SuperSession: NOT PROCESSED
+Group2-T063-SuperSession: SUCCESSFUL
+Group2-T064-SuperSession: SUCCESSFUL
+Group2-T065-SuperSession: SUCCESSFUL
+Group2-T066-SuperSession: SUCCESSFUL
+Group2-T067-SuperSession: NOT PROCESSED
+Reason: Subject is discarded subject list!
+Group2-T068-SuperSession: SUCCESSFUL
+Group2-T076-SuperSession: NOT PROCESSED
+Group2-T077-SuperSession: SUCCESSFUL
+Group2-T078-SuperSession: SUCCESSFUL
+Group2-T079-SuperSession: SUCCESSFUL
+Group2-T080-SuperSession: NOT PROCESSED
+Group2-T081-SuperSession: NOT PROCESSED
+Group2-T082-SuperSession: SUCCESSFUL
+Group2-T083-SuperSession: SUCCESSFUL
+Group2-T084-SuperSession: SUCCESSFUL
+Group2-T085-SuperSession: SUCCESSFUL
+Group2-T091-SuperSession: SUCCESSFUL
+Group2-T092-SuperSession: SUCCESSFUL
+Group2-T093-SuperSession: SUCCESSFUL
+Group2-T094-SuperSession: SUCCESSFUL
+Group2-T095-SuperSession: NOT PROCESSED
+Group2-T096-SuperSession: SUCCESSFUL
+Group2-T097-SuperSession: NOT PROCESSED
+Group2-T098-SuperSession: SUCCESSFUL
+Group2-T099-SuperSession: SUCCESSFUL
+Group2-T100-SuperSession: NOT PROCESSED
+Group2-T106-SuperSession: SUCCESSFUL
+Group2-T107-SuperSession: NOT PROCESSED
+Group2-T108-SuperSession: NOT PROCESSED
+Group2-T109-SuperSession: NOT PROCESSED
+Group2-T110-SuperSession: NOT PROCESSED
+Group2-T111-SuperSession: NOT PROCESSED
+Group2-T112-SuperSession: SUCCESSFUL
+Group2-T113-SuperSession: SUCCESSFUL
+Group2-T114-SuperSession: SUCCESSFUL
+Group2-T115-SuperSession: NOT PROCESSED
+Group2-T116-SuperSession: NOT PROCESSED
+Group3-T121-SuperSession: SUCCESSFUL
+Group3-T122-SuperSession: SUCCESSFUL
+Group3-T124-SuperSession: SUCCESSFUL
+Group3-T126-SuperSession: SUCCESSFUL
+Group3-T127-SuperSession: NOT PROCESSED
+Group3-T128-SuperSession: SUCCESSFUL
+Group3-T130-SuperSession: SUCCESSFUL
+Group3-T132-SuperSession: SUCCESSFUL
+Group3-T133-SuperSession: NOT PROCESSED
+Group3-T136-SuperSession: NOT PROCESSED
+Group3-T138-SuperSession: SUCCESSFUL
+Group3-T139-SuperSession: SUCCESSFUL
+Group3-T140-SuperSession: NOT PROCESSED
+Group3-T141-SuperSession: SUCCESSFUL
+Group3-T142-SuperSession: NOT PROCESSED
+Group3-T144-SuperSession: SUCCESSFUL
+Group3-T145-SuperSession: SUCCESSFUL
+Group3-T146-SuperSession: NOT PROCESSED
+Group3-T148-SuperSession: NOT PROCESSED
+Group3-T150-SuperSession: NOT PROCESSED
+Group3-T151-SuperSession: SUCCESSFUL
+Group3-T152-SuperSession: SUCCESSFUL
+Group3-T153-SuperSession: NOT PROCESSED
+Group3-T154-SuperSession: SUCCESSFUL
+Group3-T155-SuperSession: NOT PROCESSED
+Group3-T156-SuperSession: SUCCESSFUL
+Group3-T157-SuperSession: SUCCESSFUL
+Group3-T158-SuperSession: NOT PROCESSED
+Group3-T160-SuperSession: NOT PROCESSED
+Group3-T162-SuperSession: SUCCESSFUL
+Group3-T166-SuperSession: SUCCESSFUL
+Group3-T167-SuperSession: NOT PROCESSED
+Group3-T168-SuperSession: NOT PROCESSED
+Group3-T169-SuperSession: NOT PROCESSED
+Group3-T170-SuperSession: NOT PROCESSED
+Group3-T171-SuperSession: NOT PROCESSED
+Group3-T172-SuperSession: SUCCESSFUL
+Group3-T173-SuperSession: SUCCESSFUL
+Group3-T174-SuperSession: SUCCESSFUL
+Group3-T175-SuperSession: SUCCESSFUL
+Group3-T176-SuperSession: SUCCESSFUL
+Group3-T178-SuperSession: SUCCESSFUL
+Group3-T180-SuperSession: NOT PROCESSED
+Group3-T198-SuperSession: NOT PROCESSED
+Group3-T200-SuperSession: NOT PROCESSED
