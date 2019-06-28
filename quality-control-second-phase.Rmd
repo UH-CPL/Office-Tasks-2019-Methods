@@ -30,11 +30,9 @@ library(cowplot)
 #-------------------------#
 #-----GLOBAL VARIABLES----#
 #-------------------------#
-# root_dir <- 'T:/Google Drive/University of Houston/CS - UH/@Research - CPL/@Projects/NsfStressDataCuration'
 root_dir <- getwd()
 setwd(root_dir)
 
-# data_paper_dir <- file.path(root_dir, 'nsf-data-paper-scripts')
 data_dir <- file.path(root_dir, 'data')
 plots_dir <- file.path(root_dir, 'plots')
 raw_data_dir <- file.path(root_dir, 'raw-dataset')
