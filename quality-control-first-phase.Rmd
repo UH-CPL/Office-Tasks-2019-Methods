@@ -22,8 +22,7 @@ library(ggpubr)
 library(XLConnect) 
 extrafont::loadfonts(quiet=TRUE) 
 
-# CHANGE THE PATH
-# nsf_dir <- 'T:/Google Drive/University of Houston/CS - UH/@Research - CPL/@Projects/NsfStressDataCuration/multi-modal-email-study'
+
 nsf_dir <- getwd()
 raw_data_dir <- file.path(nsf_dir, 'raw-data-set')
 final_data_dir <- file.path(nsf_dir, 'data')
