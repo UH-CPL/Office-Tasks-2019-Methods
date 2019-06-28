@@ -27,7 +27,7 @@ source('down-sample-pp.R')
 
 
 re_extract_pp_dir <- 're-extracted-signals'
-data_dir <- 'raw-data-set'
+data_dir <- 'raw-dataset'
 log_dir <- 'log-files'
 
 

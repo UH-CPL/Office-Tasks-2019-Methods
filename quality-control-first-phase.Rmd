@@ -24,7 +24,7 @@ extrafont::loadfonts(quiet=TRUE)
 
 
 nsf_dir <- getwd()
-raw_data_dir <- file.path(nsf_dir, 'raw-data-set')
+raw_data_dir <- file.path(nsf_dir, 'raw-dataset')
 final_data_dir <- file.path(nsf_dir, 'data')
 log_dir <- file.path(nsf_dir, 'log-files')
 

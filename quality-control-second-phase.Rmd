@@ -1,0 +1,295 @@
+---
+title: "Quality Control - Second Phase"
+header-includes:
+- \usepackage{booktabs}
+- \usepackage{sectsty} \sectionfont{\centering}
+output:
+  pdf_document: default
+  html_document: default
+geometry: top=3.5cm, bottom=3cm
+---
+
+
+
+```{r echo = FALSE, warning = FALSE, message = FALSE} 
+#-------------------------#
+#--------LIBRARIES--------#
+#-------------------------#
+library(readr)
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(grid)
+library(gridExtra)
+library(ggpubr) 
+library(gsubfn)
+library(knitr)
+library(cowplot)
+
+
+#-------------------------#
+#-----GLOBAL VARIABLES----#
+#-------------------------#
+# root_dir <- 'T:/Google Drive/University of Houston/CS - UH/@Research - CPL/@Projects/NsfStressDataCuration'
+root_dir <- getwd()
+setwd(root_dir)
+
+# data_paper_dir <- file.path(root_dir, 'nsf-data-paper-scripts')
+data_dir <- file.path(root_dir, 'data')
+plots_dir <- file.path(root_dir, 'plots')
+raw_data_dir <- file.path(root_dir, 'raw-dataset')
+
+session_list <- c('RestingBaseline', 'StressCondition', 'BaselineWriting', 'DualTask', 'Presentation')
+
+non_filtered_data_file_name <- 'full_df_non_filtered.csv'
+first_phase_filtered_data_file_name <- 'full_df_first_phase_filtered.csv'
+first_phase_mean_file_name <- 'result_df_first_phase.csv'
+bad_signal_file_name <- 'bad_signal_second_phase.csv'
+qc1_filtered_subject_file_name <- 'bad_signal_first_phase.csv'
+qc1_filtered_subject_no_file_name <- 'filtered_subject_no_qc1.csv'
+pre_survey_file_name <- 'pre-survey.csv'
+
+non_filtered_df <- tibble()
+first_phase_filtered_df <- tibble()
+second_phase_filtered_df <- tibble()
+bad_moderate_signal_df <- tibble()
+bad_mean_df <- tibble()
+filtered_subject_no_df <- tibble()
+
+hr_diff_threshold <- 15.5
+
+#-------------------------#
+#---FUNCTION DEFINITION---#
+#-------------------------#
+convert_to_csv <- function(df, file_name) {
+  write.table(df, file = file.path(file_name), row.names=F, sep = ',')
+}
+
+save_plot <- function(plot_name, plot, width=15, height=10) {
+  plot_path <- file.path(plots_dir, paste0(plot_name, '.png'))
+  ggsave(plot_path, plot, width=width, height=height)
+
+  plot_path <- file.path(plots_dir, paste0(plot_name, '.pdf'))
+  ggsave(plot_path, plot, device=cairo_pdf, width=width, height=height)
+}
+
+print_msg <- function(msg) {
+  print(msg)
+  message(msg)
+}
+
+is_match <- function(str, pattern) { 
+  return(grepl(pattern, str)) 
+}
+
+get_session_name <- function(session_abbr) {
+  if (session_abbr=='RB') {
+    return('RestingBaseline')
+  } else if (session_abbr=='ST') {
+    return('BaselineWriting')
+  } else if (session_abbr=='SC') {
+    return('StressCondition')
+  } else if (session_abbr=='DT') {
+    return('DualTask')
+  } else if (session_abbr=='P') {
+    return('Presentation')
+  }
+}
+
+read_data <- function() {
+  non_filtered_df <<- read_csv(file.path(data_dir, non_filtered_data_file_name))
+  first_phase_filtered_df <<- read_csv(file.path(data_dir, first_phase_filtered_data_file_name))
+  second_phase_filtered_df <<- first_phase_filtered_df ## ITS WEIRD. BUT WE WILL MODIFY THIS DF ONLY
+  qc1_mean_df <<- read_csv(file.path(data_dir, first_phase_mean_file_name)) %>% 
+    mutate(HR_Diff=abs(HR-N.HR))
+  
+  qc1_filtered_subject_df <<- read_csv(file.path(data_dir, qc1_filtered_subject_file_name)) %>% 
+    select(Subject, Session, Measure) %>% 
+    rename(Signal=Measure) %>% 
+    mutate(Step='qc1')
+  qc1_filtered_subject_no_df <<- read_csv(file.path(data_dir, qc1_filtered_subject_no_file_name))
+}
+
+draw_hr_diff_hist_density_plot <- function() {
+  plot <- qc1_mean_df %>% 
+    ggplot(aes(HR_Diff)) +
+    # geom_histogram(binwidth = 0.5) +
+    geom_histogram(aes(y=..density..),
+                   binwidth = 0.5,
+                   alpha=0.5,
+                   position="identity")+
+    geom_density(alpha=.2,
+                 fill='#4d94ff') +
+    xlab('|Chest HR - Wrist HR| [BPM]') +
+    ylab('PDF') +
+    geom_vline(xintercept=hr_diff_threshold, 
+               linetype="dashed", 
+               color = "red") +
+    theme_bw() +
+    theme(text = element_text(size=20),
+          axis.text.x = element_text(size=24),
+          axis.text.y = element_text(size=20),
+          plot.title = element_text(hjust = 0.5))
+  print(plot)
+  
+  save_plot('hr_diff_frequency_details', plot, width=20)
+}
+
+add_subject_info <- function() {
+  pre_survey_df <- read_csv(file.path(raw_data_dir, pre_survey_file_name))[, c(22:24)]
+  colnames(pre_survey_df) <- c('Subject', 'Age', 'Gender')
+  bio_df <- pre_survey_df %>% mutate(Gender = recode(Gender,
+                                        '1' = 'Male',
+                                        '2' = 'Female'))
+  bad_mean_df <<- merge(bad_mean_df, bio_df, by='Subject')
+}
+
+add_bad_signal <- function(subj, session, signal, condition, reason='', HR_diff='NA') {
+  if(is_match(signal, 'HR')) {
+    HR_diff <- qc1_mean_df %>%
+      filter(Subject==subj,
+             Session==get_session_name(session)) %>%
+      select(HR_Diff) %>%
+      unlist()
+    print_msg(class(HR_diff))
+  }
+  
+  bad_mean_df <<- rbind(bad_mean_df,
+                   tibble(
+                     'Subject'=subj,
+                     'Session'=get_session_name(session),
+                     'Signal'=signal,
+                     'Condition'=condition,
+                     'Reason'=reason,
+                     'HR_Diff'=HR_diff
+                     )
+                   )
+}
+
+make_bad_data <- function() {
+  ########################################
+  #        Filter Out last 3 modal       #
+  ########################################
+  bad_mean_df <<- qc1_mean_df %>% 
+    select(Subject, Session, HR_Diff) %>% 
+    arrange(HR_Diff) %>% 
+    filter(HR_Diff>hr_diff_threshold) %>% 
+    mutate(Signal='N.HR',
+           Condition='Bad',
+           Reason='')
+
+  
+  ########################################
+  #         Indicating which signal      #
+  ########################################
+  # bad_mean_df$Signal <<- 'N.HR'
+  # bad_mean_df$Condition <<- 'Bad'
+  # bad_mean_df$Reason <<- ''
+  
+  
+  # add_bad_signal('T031', 'DT', 'HR', 'Bad', 'Half time signal missing')
+  # add_bad_signal('T092', 'RB', 'HR', 'Partly Bad')
+  add_bad_signal('T011', 'SC', 'N.EDA', 'Bad')
+  add_bad_signal('T011', 'ST', 'N.EDA', 'Bad')
+  add_bad_signal('T011', 'DT', 'N.EDA', 'Bad')
+  add_bad_signal('T064', 'ST', 'N.EDA', 'Bad')
+  add_bad_signal('T096', 'DT', 'N.EDA', 'Bad')
+  
+  
+  ##############################
+  ###     Add age, gender    ###
+  ##############################
+  add_subject_info()
+  ##############################
+  convert_to_csv(bad_mean_df, file.path(data_dir, bad_signal_file_name))
+  
+  
+  
+  qc2_filtered_subject_df <- bad_mean_df %>% 
+    select(Subject, Session, Signal) %>% 
+    mutate(Step='qc2')
+  
+  filtered_subject_df <- rbind(qc1_filtered_subject_df, qc2_filtered_subject_df) %>%
+    arrange(match(Signal, c("PP", "BR", "N.EDA", "HR", "N.HR")))
+  convert_to_csv(filtered_subject_df, file.path(data_dir, 'filtered_subject_list.csv'))
+
+  
+  qc2_filtered_subject_no_df <- bad_mean_df %>% 
+    group_by(Signal, Session) %>%
+    summarise(QC2=n())
+  filtered_subject_no_df <- merge(qc1_filtered_subject_no_df, qc2_filtered_subject_no_df, by=c('Signal', 'Session'), all.x=T) %>%
+    arrange(match(Signal, c("PP", "BR", "N.EDA", "HR", "N.HR")))
+  convert_to_csv(filtered_subject_no_df, file.path(data_dir, 'filtered_subject_no.csv'))
+ 
+   
+  filtered_subject_no_df <- filtered_subject_no_df %>%
+    select(-Session) %>%
+    group_by(Signal) %>%
+    mutate(QC1=sum(QC1, na.rm=T), QC2=sum(QC2, na.rm=T)) %>%
+    group_by(Signal, QC1, QC2) %>% 
+    filter(row_number() == 1) %>% 
+    arrange(match(Signal, c("PP", "BR", "N.EDA", "HR", "N.HR")))
+  convert_to_csv(filtered_subject_no_df, file.path(data_dir, 'filtered_subject_no_total.csv'))
+}
+
+replace_by_NA <- function(row_df) {
+  message(row_df['Subject'])
+  message(row_df['Session'])
+  # message(get_session_name(row_df['Session']))
+             
+  second_phase_filtered_df[second_phase_filtered_df$Subject==row_df['Subject'] &
+                           # second_phase_filtered_df$Session==get_session_name(row_df['Session']),
+                           second_phase_filtered_df$Session==row_df['Session'],
+                           row_df['Signal']] <<- NA
+}
+
+remove_partial_bad_signal <- function(subj, session, signal, from, to) {
+  second_phase_filtered_df[second_phase_filtered_df$Subject==subj &
+                           second_phase_filtered_df$Session==get_session_name(session) &
+                           # second_phase_filtered_df$Session==session &
+                           second_phase_filtered_df$TimeElapsed >= from &
+                           second_phase_filtered_df$TimeElapsed <= to,
+                           signal] <<- NA
+}
+
+filter_data_second_phase <- function() {
+  bad_signal_df <- bad_moderate_signal_df %>%
+    filter(Condition=='Bad')
+  
+  invisible(apply(bad_mean_df, 1, function(row) replace_by_NA(row)))
+  convert_to_csv(second_phase_filtered_df[order(second_phase_filtered_df$Subject),], 
+                 file.path(data_dir, 'full_df_second_phase_filtered.csv'))
+  
+  mean_df <- second_phase_filtered_df %>% 
+    select(-CovertedTime, -TimeElapsed, -Task) %>% 
+    group_by(Subject,	Session, Condition) %>% 
+    summarize_all(mean, na.rm=T) %>% 
+    ungroup()
+  
+  convert_to_csv(mean_df, file.path(data_dir, 'result_df_second_phase.csv'))
+}
+```
+
+
+```{r echo=FALSE, warning = FALSE, message = FALSE}
+read_data()
+# draw_hr_diff_hist_density_plot()
+```
+
+
+```{r echo=FALSE, warning = FALSE, message = FALSE}
+make_bad_data()
+filter_data_second_phase()
+```
+
+```{r echo=FALSE, warning = FALSE, message = FALSE}
+# qc1_mean_df <<- qc1_mean_df %>% 
+#     select(Subject, Session, HR_Diff) %>% 
+#     arrange(HR_Diff)  
+#  
+# bad_mean_df <<- bad_mean_df %>% 
+#     arrange(HR_Diff) 
+#   
+# kable(qc1_mean_df)
+# kable(bad_mean_df)
+```
