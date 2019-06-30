@@ -1,0 +1,249 @@
+---
+title: "Sensor Data Comparison Analysis"
+# output: pdf_document 
+# fontsize: 44pt
+header-includes:
+- \usepackage{booktabs}
+- \usepackage{sectsty} \sectionfont{\centering}
+output:
+  pdf_document: default
+  html_document: default
+geometry: top=3.5cm, bottom=3cm
+---
+
+
+```{r echo = FALSE, warning = FALSE, message = FALSE} 
+
+#-------------------------#
+#--------LIBRARIES--------#
+#-------------------------#
+library(readr)
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(grid)
+library(gridExtra)
+library(ggpubr) 
+library(directlabels)
+library(gsubfn)
+
+
+#-------------------------#
+#-----GLOBAL VARIABLES----#
+#-------------------------#
+project_dir <- "T:/Google Drive/University of Houston/CS - UH/@Research - CPL/@Projects/NsfStressDataCuration/nsf-data-paper-scripts"
+setwd(project_dir)
+
+data_dir <- 'data'
+plots_dir <- 'plots'
+
+
+
+### CHANGE THIS
+mean_first_filtered_file_name <- 'result_df_first_phase.csv'
+mean_second_filtered_file_name <- 'result_df_second_phase.csv'
+
+
+
+condition_types <- c('L', 'H')
+session_list <- c('RestingBaseline', 'Presentation', 'StressCondition', 'BaselineWriting', 'DualTask')
+
+common_col_list <- c('Subject', 'Condition', 'Session')
+# perspiration_signal_list <- c('PP', 'N.EDA')
+hr_signal_list <- c('HR', 'N.HR')
+# 
+# all_signal_col_list <- c(common_col_list, perspiration_signal_list, hr_signal_list)
+# new_session_list <- c('WB.RB', 'DT.RB', 'P.RB', 'SC.RB')
+# new_col_list <- c('Subject', 'Condition', 'Signal', new_session_list)
+# 
+hr_col_list <- c(common_col_list, hr_signal_list)
+# perspiration_col_list <- c(common_col_list, perspiration_signal_list)
+
+
+mean_df <- tibble()
+
+plot_list <- list()
+
+#-------------------------#
+#---FUNCTION DEFINITION---#
+#-------------------------#
+convert_to_csv <- function(df, file_name) {
+  write.table(df, file = file.path(data_dir, file_name), row.names=F, sep = ',')
+}
+
+save_plot <- function(plot_name, plot, default_width=15, default_height=10) {
+  plot_path <- file.path(project_dir, paste0(plot_name, '.png'))
+  ggsave(plot_path, plot, width=default_width, height=default_height)
+  
+  plot_path <- file.path(project_dir, paste0(plot_name, '.pdf'))
+  ggsave(plot_path, plot, device=cairo_pdf, width=default_width, height=default_height)
+}
+
+print_msg <- function(df) {
+  print(df)
+  message(df)
+}
+
+is_significant <- function(t_test) {
+  return(t_test$p.value > 0.05)
+}
+
+check_significance <- function(t_test) {
+  if (is_significant(t_test)) {
+    return('not significant.')
+  }
+  return('significant.')
+}
+
+is_match <- function(string_we_have, pattern_we_are_looking_for) { 
+  return(grepl(pattern_we_are_looking_for, string_we_have)) 
+} 
+
+replace_dot_space <- function(str) {
+  gsubfn(".", list("." = "_", " " = "_"), tolower(str))
+}
+
+## Function for annotating boxplot with n.
+get_n <- function(df) { 
+  return(c(y=-Inf, vjust = -1, label=length(df))) 
+}
+
+get_significance_sign <- function(p_value) { 
+  if (p_value > 0.05) { 
+    return(" ") 
+  } else if (p_value <= 0.001) { 
+    return("***") 
+  } else if (p_value <= 0.01) { 
+    return("**") 
+  } else if (p_value <= 0.05) { 
+    return("*") 
+  } 
+} 
+
+get_session_hr_df <- function(df, session_name, condition_type='all') {
+  if (condition_type=='all') {
+    return(df[df$Session==session_name, ])
+  } else {
+    return(df[df$Session==session_name &is_match(df$Condition, condition_type), ])
+  }
+}
+
+get_session_title <- function(session_name, condition_type=NA) {
+  if (session_name=='RestingBaseline') {
+    return('Resting Baseline')
+  } else if (session_name=='BaselineWriting') {
+    return('Single Task')
+  } else if (session_name=='DualTask') {
+    return('Dual Task')
+  } else if (session_name=='StressCondition') {
+    if (condition_type=='L') {
+      return('Relaxing Video')
+    } else {
+      return('Stroop')
+    }
+  } 
+  
+  return(session_name)
+}
+
+read_data <- function() {
+  mean_first_df <- read_csv(file.path(data_dir, mean_first_filtered_file_name))[, hr_col_list]
+  mean_second_df <- read_csv(file.path(data_dir, mean_second_filtered_file_name))[, hr_col_list]
+  
+  mean_df <<- merge(mean_first_df, mean_second_df, by=common_col_list)
+  print_msg(str(mean_df))
+}
+
+box_plot_hr_comparison <- function(df, session_name=NA, plot_title) {
+  t_test_first_filtered <- t.test(df$HR.x, df$N.HR.x, data=df, paired=T)
+  t_test_second_filtered <- t.test(df$HR.y, df$N.HR.y, data=df, paired=T)
+  
+  # print(t_test_first_filtered$p.value)
+  # print(t_test_second_filtered$p.value)
+  # 
+  # t_test_first_filtered <- t.test(df$HR.x-df$N.HR.x,  mu=0, data=df)
+  # t_test_second_filtered <- t.test(df$HR.y-df$N.HR.y, mu=0, data=df)
+  # 
+  # print(t_test_first_filtered$p.value)
+  # print(t_test_second_filtered$p.value)q
+  
+  boxplot_df <- df %>% 
+    # na.omit %>% 
+    mutate(diff_first_filtered=HR.x-N.HR.x,
+           diff_second_filtered=HR.y-N.HR.y) %>% 
+    select(-HR.x, -N.HR.x, -HR.y, -N.HR.y) %>% 
+    gather(Signal, Value, -Subject, -Condition, -Session)
+  
+  print_msg(str(boxplot_df))
+  
+  # get_box_plot(box_plot_df, 
+  #              'Signal', 
+  #              'Value', 
+  #              'Heart Rate', 
+  #              figure_out_labels('HR'), 
+  #              plot_title, 
+  #              file_name,
+  #              get_significance_sign(t_test$p.value))
+  
+  plot <- boxplot_df %>%
+    ggplot(aes(Signal, Value)) +
+    geom_boxplot(width=0.3) +
+    ggtitle(plot_title) +
+    ylab('Heart Rate [BPM]') +
+    theme_bw(base_size = 18) + 
+    theme(axis.title.x = element_blank()) +
+    geom_hline(yintercept=0, linetype="dashed", color = "red", alpha = 0.6, size=1) + 
+    stat_summary(fun.y = mean, color = "darkred", geom = "point", shape = 3, size = 4, show_guide = FALSE) +
+    stat_summary(fun.data = get_n, geom = "text", size = 6) +
+    scale_x_discrete(labels=c("diff_first_filtered" = "QC1: HR_c - HR_w", "diff_second_filtered" = "QC2: HR_c - HR_w")) +
+    scale_y_continuous(expand = c(0.3, 0, 0.3, 0)) +
+    annotate("text", x=1, y=Inf, label= get_significance_sign(t_test_first_filtered$p.value), vjust = 1.2, size = 10) +
+    annotate("text", x=2, y=Inf, label= get_significance_sign(t_test_second_filtered$p.value), vjust = 1.2, size = 10) +
+    theme(text = element_text(size=16),
+          axis.title = element_text(size = 16),
+          plot.title = element_text(hjust = 0.5, size = 20, face = "bold"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          axis.line = element_line(colour = "black")) 
+  print(plot)
+  plot_list[[length(plot_list) + 1]] <<- plot
+}
+``` 
+
+
+
+```{r echo=FALSE, warning = FALSE, message = FALSE}
+read_data()
+```
+
+
+\newpage
+# T Test - Mean Heart Rate - Per Session
+\newpage
+```{r echo=FALSE, warning = FALSE, message = FALSE}
+for (session_name in session_list) {
+  if (session_name=='StressCondition') {
+    for (condition_type in condition_types) {
+      temp_mean_df <- get_session_hr_df(mean_df, session_name, condition_type)
+      # print_msg(session_name)
+      # print_msg(str(temp_mean_df))
+      box_plot_hr_comparison(temp_mean_df, 
+                             session_name,
+                             plot_title=get_session_title(session_name, condition_type))
+    }
+    cat("\\newpage\n")
+    
+  } else {
+    temp_mean_df <- get_session_hr_df(mean_df, session_name)
+    # print_msg(session_name)
+    # print_msg(str(temp_mean_df))
+    box_plot_hr_comparison(temp_mean_df, 
+                           session_name,
+                           plot_title=get_session_title(session_name))
+  }
+  cat("\\newpage\n")
+  
+}
+grid_plot <- do.call("grid.arrange", c(plot_list, ncol=2))
+save_plot(file.path(plots_dir, 'hr_comparison_combined_box_plot'), grid_plot)
+```
