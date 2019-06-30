@@ -1,0 +1,319 @@
+---
+title: 'Mean Signal Density Function Plots'
+# output: pdf_document 
+# fontsize: 44pt
+header-includes:
+- \usepackage{booktabs}
+- \usepackage{sectsty} \sectionfont{\centering}
+output:
+  pdf_document: default
+  html_document: default
+geometry: top=3.5cm, bottom=3cm
+---
+
+
+```{r echo = FALSE, warning = FALSE, message = FALSE} 
+
+#-------------------------#
+#--------LIBRARIES--------#
+#-------------------------#
+library(readr)
+# library(XLConnect)
+library(plyr)
+library(dplyr)
+library(tidyr)
+library(tidyverse)
+library(ggplot2)
+library(cowplot)
+
+library(grid)
+library(gridExtra)
+library(ggpubr)
+
+
+#-------------------------#
+#-----GLOBAL VARIABLES----#
+#-------------------------#
+data_paper_dir <- getwd()
+data_dir <- file.path(data_paper_dir, 'data')
+plots_dir <- file.path(data_paper_dir, 'plots')
+
+
+raw_mean_file_name <- 'result_df_non_filtered.csv'
+qc2_mean_file_name <- 'result_df_second_phase.csv'
+
+common_col_names <- c('Subject', 'Condition', 'Session')
+signal_col_names <- c('PP', 'N.EDA', 'BR', 'HR', 'N.HR')
+col_names <- c(common_col_names, signal_col_names)
+
+session_list <- c('RestingBaseline', 'BaselineWriting', 'StressCondition', 'DualTask', 'Presentation')
+
+session_color_code <- c("#DC143C",     ## PR
+                        "#46aee6",     ## DT
+                        "#f89c70",     ## ST
+                        "#abb2b9"    ## RB
+                        # "#fceabb"      ## RB
+                        ) 
+
+mean_line_color_code <- c("#DC143C",   ## PR
+                        "#46aee6",     ## DT
+                        "#f89c70",     ## ST
+                        "#566573"    ## RB
+                        # "#d3b66b"      ## RB
+                        )  
+
+
+legend_order <- c("RB",
+                  "ST",
+                  "DT",
+                  "PR")
+
+default_height <- 10
+default_width <- 15
+
+
+nlp_score_df <- tibble()
+
+probability_plot_list <- list()
+cumulative_plot_list <- list()
+probability_plot_legend <- NULL
+cumulative_plot_legend <- NULL
+
+#-------------------------#
+#---FUNCTION DEFINITION---#
+#-------------------------#
+convert_to_csv <- function(df, file_name) {
+  write.table(df, file = file.path(file_name), row.names=F, sep = ',')
+}
+
+specify_decimal <- function(x, k) {
+  trimws(format(round(x, k), nsmall=k))
+}
+
+remove_na <- function(df, col_list) {
+  return(df[complete.cases(df[, col_list]), ])
+}
+
+is_match <- function(str, pattern) { 
+  return(grepl(pattern, str)) 
+} 
+
+print_msg <- function(msg) {
+  print(msg)
+  message(msg)
+}
+
+is_matched_string <- function(pattern, str) { 
+  return(grepl(pattern, str, perl=TRUE)) 
+} 
+
+split_camel_case <- function(str) {
+  return(gsub('([A-Z])', ' \\1', str))
+}
+
+save_plot <- function(plot_name, plot, width=default_width, height=default_height) {
+  plot_path <- file.path(plots_dir, paste0(plot_name, '.png'))
+  ggsave(plot_path, plot, width=width, height=height)
+  
+  plot_path <- file.path(plots_dir, paste0(plot_name, '.pdf'))
+  ggsave(plot_path, plot, device=cairo_pdf, width=width, height=height)
+}
+
+get_refactored_data <- function(df) {
+  df <- df %>% 
+    filter(Session!='StressCondition') %>% 
+    mutate(Session=recode_factor(Session,
+                                 "Presentation" = "PR",
+                                 "DualTask" = "DT",
+                                 "BaselineWriting" = "ST",
+                                 "RestingBaseline" = "RB"
+                                 ))
+  return(df)
+}
+
+get_mean_of_mean_data <- function(df) {
+  mean_of_mean_df <- df %>%
+    select(-Subject, -Condition) %>% 
+    group_by(Session) %>%
+    summarise(mean_PP=mean(PP, na.rm=T),
+              mean_N.EDA=mean(N.EDA, na.rm=T),
+              mean_HR=mean(HR, na.rm=T),
+              mean_N.HR=mean(N.HR, na.rm=T),
+              mean_BR=mean(BR, na.rm=T))
+  return(mean_of_mean_df)
+}
+
+read_data <- function() {
+  raw_mean_df <<- read_csv(file.path(data_dir, raw_mean_file_name))[, col_names]
+  qc2_mean_df <<- read_csv(file.path(data_dir, qc2_mean_file_name))[, col_names]
+  
+  raw_mean_df <<- get_refactored_data(raw_mean_df)
+  qc2_mean_df <<- get_refactored_data(qc2_mean_df)
+  
+  raw_mean_per_session_df <<- get_mean_of_mean_data(raw_mean_df)
+  qc2_mean_per_session_df <<- get_mean_of_mean_data(qc2_mean_df)
+
+  # convert_to_csv(mean_per_session_df, file.path(data_dir, 'mean_per_session_all_subj.csv'))
+}
+
+get_x_label <- function(signal) {
+  if (is_match(signal, 'PP')) { 
+    return(bquote(paste('log'[10], '(PP [',''^'o','C',''^2,'])'))) 
+    # return(expression('Perinasal Perspiration'~paste(' [',''^'o','C',''^2,']')))
+  } else if (signal=='HR') {
+    return('Chest HR [BPM]')
+  } else if (signal=='N.HR') {
+    return('Wrist HR [BPM]')
+  } else if (is_match(signal, 'BR')) { 
+    return('BR [BPM]')
+    # return('Breathing Rate [BPM]')
+  } else if (is_match(signal, 'EDA')) {
+    return(expression(paste('log'[10], '(EDA [', mu, 'S])')))
+    # return(expression(paste('EDA [', mu, 'S]')))
+  } 
+  return('Unknown axis.')
+}
+
+get_y_label <- function(data_type) {
+  if (data_type=='raw') { 
+    return('PDF')
+  }
+  
+  return('')
+}
+
+get_x_lim <- function(signal) {
+  if (is_match(signal, 'EDA')) { 
+    return(c(0, 12))
+  } else if (signal=='HR') {
+    return(c(0, 140))
+  } else if (signal=='N.HR') {
+    return(c(40, 120))
+  } else if (signal=='BR') {
+    return(c(0, 30))
+  }  
+}
+
+add_bottom_legend <- function() {
+  theme(legend.position="bottom",
+        legend.spacing.x = unit(0.2, 'cm'), ## Distance between legend key and legend text
+        legend.text = element_text(margin=margin(r=15, unit="pt")), ## Distance between legends
+        legend.direction = "horizontal",
+        legend.justification="center",
+        legend.title = element_blank())
+
+}
+
+remove_legend <- function() {
+  theme(legend.position="none")
+}
+
+get_right_margin_val <- function(data_type) {
+  if (data_type=='qc2') {
+    return(1.5)
+  }
+  
+  return(0.5)
+}
+
+get_title <- function(data_type) {
+  if (data_type=='raw') {
+    return('Before Quality Control')
+  } 
+  
+  return('After Quality Control')
+}
+
+get_breaks <- function(signal) {
+  if (signal=='PP') {
+    return(c(0.004, 0.008, 0.016))
+  } else if (signal=='N.EDA') {
+    return(c(0.01, 0.1, 1, 10))
+  }
+}
+
+get_pdf_plot <- function(mean_df, mean_per_session_df, signal, total_signal, data_type) {
+  probability_density_plot <-
+    mean_df %>%
+    ggplot(aes(x=mean_df[[signal]],
+               fill=Session)) +
+    # geom_histogram(aes(y=..density..), position="identity", alpha=0.9)+
+    geom_density(alpha=0.75) +
+    geom_vline(data=mean_per_session_df,
+               mapping=aes(xintercept=mean_per_session_df[[paste0('mean_', signal)]]),
+               colour=mean_line_color_code,
+               linetype='dashed',
+               size=1) +
+    scale_fill_manual(values=session_color_code,
+                      breaks=legend_order) +
+    xlab(get_x_label(signal)) +
+    ylab(get_y_label(data_type)) + 
+    xlim(min(raw_mean_df[[signal]], na.rm=T), max(raw_mean_df[[signal]], na.rm=T)) +
+    theme(text=element_text(size=18),
+          axis.text = element_text(size=20),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          axis.line = element_line(colour = "black"),
+          plot.title = element_text(size=20, margin=margin(0, 0, 40, 0)), ##top, right, bottom, left
+          plot.margin = unit(c(2, get_right_margin_val(data_type), 0.5, 0.5), "lines"))  ##top, right, bottom, left
+
+  
+  if (signal=='N.EDA' | signal=='PP') {
+        probability_density_plot <- probability_density_plot + 
+          scale_x_continuous(trans='log10',
+                             # limits=c(
+                             #   min(raw_mean_df[[signal]], na.rm=T) + 0.001,
+                             #   max(raw_mean_df[[signal]], na.rm=T)
+                             #   ),
+                             breaks=get_breaks(signal))
+        } 
+
+  if (length(probability_plot_list) == 0) {
+    probability_density_plot <- probability_density_plot +
+      ggtitle(get_title(data_type))
+  }else if (length(probability_plot_list)+1 == total_signal) {
+    probability_plot_legend <<- get_legend(probability_density_plot + add_bottom_legend())
+  }
+
+  probability_density_plot <- probability_density_plot + remove_legend()
+}
+
+draw_plot <- function(signal, total_signal) {
+  raw_pdf_plot <- get_pdf_plot(raw_mean_df, raw_mean_per_session_df, signal, total_signal, 'raw')
+  qc2_pdf_plot <- get_pdf_plot(qc2_mean_df, qc2_mean_per_session_df, signal, total_signal, 'qc2')
+  
+  grid_plot <- plot_grid(raw_pdf_plot, qc2_pdf_plot, cols=2)
+  probability_plot_list[[length(probability_plot_list)+1]] <<- grid_plot
+}
+
+draw_plots <- function() {
+  ### Can not check lenght of signal_col_names, have to pass another arg
+  ### Printing garbage values
+  ### Hassle to return multiple variables or have to take as global
+  sapply(signal_col_names, draw_plot, total_signal=length(signal_col_names))
+
+  grid_plot <- plot_grid(plotlist=probability_plot_list,
+                         rel_heights = c(2.6, 2, 2, 2, 2),
+                         cols=1)
+  grid_plot <- plot_grid(grid_plot,
+                         probability_plot_legend,
+                         rel_heights = c(10.6, 1),
+                         # rel_heights = c(10, 1),
+                         align='v',
+                         cols=1)
+  save_plot('combined_mean_signal_distribution_pdf', grid_plot, width=12, height=15)
+}
+``` 
+
+
+<!-- READ DATA GLOBLALLY -->
+```{r echo=FALSE, warning = FALSE, message = FALSE}
+read_data()
+```
+
+
+<!-- DRAW PLOTS -->
+\newpage
+```{r echo=FALSE, warning = FALSE, message = FALSE}
+draw_plots()
+```

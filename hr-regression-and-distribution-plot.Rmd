@@ -1,0 +1,296 @@
+---
+title: "Sensor Data Comparison Analysis"
+# output: pdf_document 
+# fontsize: 44pt
+header-includes:
+- \usepackage{booktabs}
+- \usepackage{sectsty} \sectionfont{\centering}
+output:
+  pdf_document: default
+  html_document: default
+geometry: top=3.5cm, bottom=3cm
+---
+
+
+```{r echo = FALSE, warning = FALSE, message = FALSE} 
+
+#-------------------------#
+#--------LIBRARIES--------#
+#-------------------------#
+library(readr)
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(grid)
+library(gridExtra)
+library(ggpubr) 
+library(directlabels)
+library(gsubfn)
+library(cowplot)
+
+
+#-------------------------#
+#-----GLOBAL VARIABLES----#
+#-------------------------#
+project_dir <- getwd()
+setwd(project_dir)
+
+data_dir <- 'data'
+plots_dir <- 'plots'
+
+
+data_file_names <- c('result_df_first_phase.csv', 'result_df_second_phase.csv')
+
+common_col_list <- c('Subject', 'Condition', 'Session')
+hr_signal_list <- c('HR', 'N.HR')
+hr_col_list <- c(common_col_list, hr_signal_list)
+
+plot_label <- c('A1', 'A2', 'B1', 'B2')
+
+plot_list <- list()
+test_plot_list <- list()
+
+qc1_mean_df <- tibble()
+
+hr_diff_threshold <- 15.5
+
+
+#-------------------------#
+#---FUNCTION DEFINITION---#
+#-------------------------#
+convert_to_csv <- function(df, file_name) {
+  write.table(df, file = file.path(data_dir, file_name), row.names=F, sep = ',')
+}
+
+specify_decimal <- function(x, k) {
+  trimws(format(round(x, k), nsmall=k))
+}
+
+print_msg <- function(df) {
+  print(df)
+  message(df)
+}
+
+is_match <- function(string_we_have, pattern_we_are_looking_for) { 
+  return(grepl(pattern_we_are_looking_for, string_we_have)) 
+} 
+
+replace_dot_space <- function(str) {
+  gsubfn(".", list("." = "_", " " = "_"), tolower(str))
+}
+
+save_plot <- function(plot_name, plot, default_width=15, default_height=12) {
+  plot_path <- file.path(project_dir, plots_dir,  paste0(plot_name, '.png'))
+  ggsave(plot_path, plot, width=default_width, height=default_height)
+  
+  plot_path <- file.path(project_dir, plots_dir, paste0(plot_name, '.pdf'))
+  ggsave(plot_path, plot, device=cairo_pdf, width=default_width, height=default_height)
+}
+
+## BAD CODING
+# get_plot_label <- function(idx) {
+#   if (idx==1) {
+#     'A'
+#   } else 'B'
+# }
+
+round_p_value <- function(p_value) {
+  if (p_value < 0.00001) {
+    return(0)
+  }
+  return(p_value)
+}
+
+get_scatter_plot <- function(df, idx, x_col, y_col, x_label, y_label, title, file_name, transformed=F) {
+  cor_test <- cor.test(df[[x_col]], df[[y_col]], method = "pearson")
+  subj_no <- df %>% summarize(n = n())
+  
+  ## Very Bad Coding :P
+  # if(x_col=='HR') point=10 else point=3
+
+  annot_label <- paste0("n = ", subj_no, 
+                       # ", p = ", specify_decimal(cor_test$p.value, point), 
+                       ", p = ", round_p_value(cor_test$p.value), 
+                       ", r = ", specify_decimal(cor_test$estimate, 3))
+    
+  plot <- df %>%
+    ggplot(aes(df[[x_col]], df[[y_col]])) +
+    geom_point(size = 3) +
+    geom_smooth(method = "lm") +
+    # ggtitle(title) + 
+    theme_bw() + 
+    xlab(x_label) + 
+    ylab(y_label) +
+    scale_x_continuous(limits = c(min(qc1_mean_df$N.HR), max(qc1_mean_df$N.HR))) +
+    scale_y_continuous(limits = c(min(qc1_mean_df$HR), max(qc1_mean_df$HR)),
+                       expand = c(0.2, 0, 0.2, 0)) +
+    annotate("text",
+         x=max(df[[x_col]]),
+         y=Inf,
+         hjust=1,
+         vjust=1.5,
+         label=annot_label,
+         fontface = 'italic', 
+         size = 8) +
+    theme(text = element_text(size=22),
+          axis.text = element_text(size = 18),
+          plot.margin = unit(c(1, 0.5, 1, 0.5), "lines"),  ##top, right, bottom, left
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          axis.line = element_line(colour = "black")) 
+  
+  plot <- arrangeGrob(plot, top = textGrob(toupper(plot_label[length(plot_list)+1]),
+                                        x = unit(0, "npc"),
+                                        y = unit(1, "npc"),
+                                        vjust = 1.8, 
+                                        hjust = -1.2,
+                                        just = c("left","top"),
+                                        gp = gpar(col="black", fontsize=22, fontface="bold")
+                                       ))
+  
+  plot_list[[length(plot_list)+1]] <<- plot
+}
+
+generate_hr_test_plot <- function(idx) {
+  mean_df <- read_csv(file.path(data_dir, data_file_names[idx]))[, hr_col_list] %>% na.omit()
+  print_msg(str(mean_df))
+
+  
+  
+  
+  
+  ###############################################################
+  plot <- mean_df %>% 
+    mutate(hr_diff=abs(HR-N.HR)) %>% 
+    ggplot(aes(x=hr_diff)) +
+    
+    
+    geom_histogram(binwidth=1) +
+    xlim(0, 50) +
+    ylab('Count') +
+    
+    # geom_histogram(aes(y=..density..), colour="black", fill="white") +
+    # geom_density(alpha=0.2, fill="#4d94ff") +
+    # xlim(-10, 50) +
+    # ylab('PDF') +
+    
+    xlab('|Chest HR - Wrist HR| [BPM]') +
+    theme(text = element_text(size=22),
+          axis.text = element_text(size = 18),
+          plot.margin = unit(c(1, 0.5, 1, 0.5), "lines"),  ##top, right, bottom, left
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          axis.line = element_line(colour = "black")) 
+  
+  test_plot_list[[length(test_plot_list)+1]] <<- plot
+  ###############################################################
+}
+
+read_data <- function() {
+  qc1_mean_df <<- read_csv(file.path(data_dir, data_file_names[1]))[, hr_col_list] %>% na.omit()
+}
+
+generate_hr_plot <- function(idx) {
+  mean_df <- read_csv(file.path(data_dir, data_file_names[idx]))[, hr_col_list] %>% na.omit()
+  print_msg(str(mean_df))
+
+  get_scatter_plot(mean_df,
+                   idx,
+                   'HR',
+                   'N.HR',
+                   'Wrist HR [BPM]',
+                   'Chest HR [BPM]',
+                   'Chest HR vs Wrist HR',
+                   'c_hr_vs_w_hr')
+  
+  plot <- mean_df %>% 
+    mutate(hr_diff=abs(HR-N.HR)) %>% 
+    ggplot(aes(x=hr_diff)) +
+    geom_density(alpha=0.6, fill='#4d94ff') +
+    xlim(-10, 50) +
+    xlab('|Chest HR - Wrist HR| [BPM]') +
+    ylab('PDF') +
+    theme(text = element_text(size=22),
+          axis.text = element_text(size = 18),
+          plot.margin = unit(c(1, 0.5, 1, 0.5), "lines"),  ##top, right, bottom, left
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          axis.line = element_line(colour = "black")) 
+  
+    if (idx==1) {
+      plot <- plot + 
+        geom_vline(xintercept=hr_diff_threshold, 
+                   # linetype="dashed", 
+                   color = "red", 
+                   alpha = 0.8, 
+                   size=1)
+    }
+
+  
+  plot <- arrangeGrob(plot, top = textGrob(toupper(plot_label[length(plot_list)+1]),
+                                        x = unit(0, "npc"),
+                                        y = unit(1, "npc"),
+                                        vjust = 1.8, 
+                                        hjust = -1.2,
+                                        just = c("left","top"),
+                                        gp = gpar(col="black", fontsize=22, fontface="bold")
+                                       ))
+  
+  plot_list[[length(plot_list)+1]] <<- plot
+}
+
+``` 
+
+
+
+\newpage
+## Regression Plot
+```{r echo=FALSE, warning = FALSE, message = FALSE}
+read_data()
+for (idx in 1:length(data_file_names)) {
+  generate_hr_plot(idx)
+  # generate_hr_test_plot(idx)
+}
+
+
+
+grid_plot <- plot_grid(plotlist=plot_list, cols=2)
+save_plot('hr_regression_and_distribution', grid_plot)
+
+# test_grid_plot <- plot_grid(plotlist=test_plot_list, cols=1)
+# save_plot('test_hr_hist', test_grid_plot)
+
+```
+
+\newpage
+## C_HR-W_HR Plot
+```{r echo=FALSE, warning = FALSE, message = FALSE}
+# plot_list <- list()
+# for (data_file_name in data_file_names) {
+#   mean_df <- read_csv(file.path(data_dir, data_file_name))[, hr_col_list] %>% 
+#     na.omit() %>% 
+#     mutate(hr_diff=abs(HR-N.HR))
+#   
+#   # print_msg(str(mean_df))
+#   plot <- mean_df %>% 
+#     ggplot(aes(x=hr_diff)) +
+#     geom_density(alpha=0.8, fill='#ffad99') +
+#     xlim(-10, 50) +
+#     # xlim(-50, 50) +
+#     xlab('abs(Chest HR - Wrist HR)') +
+#     ylab('PDF') +
+#     theme(text = element_text(size=28),
+#           axis.text = element_text(size=22))
+#           # plot.margin = unit(c(1, 0.5, 0.5, 0.5), "lines"),  ##top, right, bottom, left
+#           # panel.grid.major = element_blank(),
+#           # panel.grid.minor = element_blank(),
+#           # axis.line = element_line(colour = "black")) 
+#   print(plot)
+#   
+#   plot_list[[length(plot_list)+1]] <- plot
+# }
+# 
+# grid_plot <- plot_grid(plotlist=plot_list, cols=1)
+# save_plot('hr_diff_distribution_abs', grid_plot)
+```
+
