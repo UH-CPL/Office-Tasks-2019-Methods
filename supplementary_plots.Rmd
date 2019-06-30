@@ -1,0 +1,397 @@
+---
+title: "Supplementary Plots"
+header-includes:
+- \usepackage{booktabs}
+- \usepackage{sectsty} \sectionfont{\centering}
+output:
+  pdf_document: default
+  html_document: default
+geometry: top=3.5cm, bottom=3cm
+---
+
+
+```{r echo = FALSE, warning = FALSE, message = FALSE} 
+
+#-------------------------#
+#--------LIBRARIES--------#
+#-------------------------#
+library(readr)
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(grid)
+library(gridExtra)
+library(ggpubr)
+# library(directlabels)
+library(gsubfn)
+
+# source('T:/Google Drive/University of Houston/CS - UH/@Research - CPL/@Projects/NsfStressDataCuration/nsf-data-paper-scripts/@multiplot.R')
+
+
+#-------------------------#
+#-----GLOBAL VARIABLES----#
+#-------------------------#
+data_paper_dir <- getwd()
+setwd(data_paper_dir)
+
+# data_paper_dir <- file.path(root_dir, 'nsf-data-paper-scripts')
+data_dir <- file.path(data_paper_dir, 'data')
+plots_dir <- file.path(data_paper_dir, 'plots')
+
+session_list <- c('RestingBaseline', 'StressCondition', 'BaselineWriting', 'DualTask', 'Presentation')
+
+
+### CHANGE THIS
+# # filtered_data_file_name <- 'full_df_non_filtered.csv'
+# # mean_data_file_name <- 'need_to_change.csv' ##NEED TO CHANGE!!!!
+# # hr_col_names <- c('HR.non.filtered', 'N.HR.non.filtered')
+# # eda_col_name <- 'N.EDA.non.filtered'
+
+
+
+### CHANGE THIS
+filtered_data_file_name <- 'full_df_first_phase_filtered.csv'
+mean_data_file_name <- 'result_df_first_phase.csv'
+
+
+### CHANGE THIS
+# filtered_data_file_name <- 'full_df_second_phase_filtered.csv'
+# mean_data_file_name <- 'result_df_second_phase.csv'
+
+
+bad_moderate_signal_file_name <- 'bad_signal_second_phase.csv'
+
+
+hr_col_names <- c('HR', 'N.HR')
+hr_new_col_names <- c('Chest HR', 'Wrist HR')
+eda_col_name <- 'N.EDA'
+eda_new_col_name <- 'EDA'
+
+common_col_names <- c('Subject', 'Condition', 'Session', 'CovertedTime', 'TimeElapsed')
+hr_col_list <- c(common_col_names, hr_col_names)
+
+hr_col_vec <- c('coral', 'dodgerblue')
+hr_mean_col_vec <- c('coral3', 'dodgerblue3')
+
+filtered_df <- tibble()
+mean_df <- tibble()
+mean_of_mean_df <- tibble()
+bad_moderate_signal_df <- tibble()
+``` 
+
+
+```{r echo=FALSE, warning = FALSE, message = FALSE}
+convert_to_csv <- function(df, file_name) {
+  write.table(df, file = file.path(file_name), row.names=F, sep = ',')
+}
+
+print_msg <- function(msg) {
+  print(msg)
+  message(msg)
+}
+
+is_not_null <- function(str) {
+  return(!is.null(str) & length(str) > 0)
+}
+
+is_match <- function(str, pattern) { 
+  if(!is_not_null(str)) {
+    return(FALSE)
+  }
+  return(grepl(pattern, str)) 
+}
+
+figure_out_labels <- function(col_name) { 
+  if (is_match(col_name, 'HR')) { 
+    return('Heart Rate [BPM]') 
+  } else if (is_match(col_name, 'N.EDA')) { 
+    return(expression(paste('EDA [', mu, 'S]'))) 
+  } 
+  return('Unknown axis')
+}
+
+#---- Add one space if it finds any CamelCase ----#
+get_session_name <- function(session_name) {
+  if (session_name == 'BaselineWriting') {
+    return('Single Task')
+  } else if (session_name == 'StressCondition') {
+    return('Priming')
+  }
+  return(gsub("([a-z])([A-Z])", "\\1 \\2", session_name))
+}
+
+read_data <- function() {
+  filtered_df <<- read_csv(file.path(data_dir, filtered_data_file_name))
+  bad_moderate_signal_df <<- read_csv(file.path(data_dir, bad_moderate_signal_file_name))
+  mean_df <<- read_csv(file.path(data_dir, mean_data_file_name))
+  mean_df <<- rename(mean_df, 'Chest HR'='HR', 'Wrist HR'='N.HR', 'EDA'='N.EDA')
+  
+  mean_of_mean_df <<- mean_df %>% 
+    select(-Subject, -Condition) %>% 
+    group_by(Session) %>% 
+    summarise_each(funs(mean(., na.rm = TRUE)))
+  
+  # convert_to_csv(mean_of_mean_df, file.path(data_dir, 'mean_of_mean.csv'))
+}
+
+
+get_session_mean <- function(session, col_name) {
+  mean <- mean_of_mean_df %>%
+    filter(Session==session) %>%
+    select(col_name) %>% 
+    unlist(.)
+  return(mean)
+}
+
+get_mean <- function(subj, session, col_name) {
+  mean <- mean_df %>%
+    filter(Session==session & Subject==subj) %>%
+    select(col_name) %>% 
+    unlist(.)
+  return(mean)
+}
+
+get_eda_max_y_limit <- function(df) {
+  if(max(df$Value) < 5) 5 else max(df$Value)
+}
+
+get_hr_y_min_lim <- function(df) {
+  if(min(df$Value) < 50) min(df$Value) else 50
+}
+
+get_hr_y_max_lim <- function(df) {
+  if(max(df$Value) > 120) max(df$Value) else 120
+}
+
+# get_session_name <- function(session_abbr) {
+#   if (session_abbr=='RB') {
+#     return('RestingBaseline')
+#   } else if (session_abbr=='ST') {
+#     return('BaselineWriting')
+#   } else if (session_abbr=='SC') {
+#     return('StressCondition')
+#   } else if (session_abbr=='DT') {
+#     return('DualTask')
+#   } else if (session_abbr=='P') {
+#     return('Presentation')
+#   }
+# }
+
+condition_of_subject <- function(subj, session) {
+  condition <- bad_moderate_signal_df %>% 
+    filter(Subject==subj) %>% 
+    filter(Session==session) %>% 
+    pull(Condition)
+  
+  return(condition)
+}
+
+get_bad_signal_list <- function(subj, session) {
+  signal_list <- bad_moderate_signal_df %>% 
+    filter(Subject==subj & Session==session & Condition=='Bad') %>% 
+    select(Signal)
+  
+  return(signal_list$Signal)
+}
+
+draw_plots <- function() {
+  subj_list <- levels(factor(filtered_df$Subject))
+  # subj_list <- c('T011', 'T031')
+  
+  for(subj in subj_list) {
+    
+    message('')
+    message(subj)
+    message('-----------------')
+    
+    # plot_list <- list()
+    
+    for (session in session_list) {
+      message(session)
+      temp_plot_list <- list()
+      
+      hr_df <- filtered_df %>% 
+        filter(Subject==subj, Session==session) %>% 
+        select(hr_col_list) %>% 
+        gather(Signal, Value, hr_col_names) %>% 
+        mutate(Signal=replace(Signal, Signal=='HR', 'Chest HR'),
+               Signal=replace(Signal, Signal=='N.HR', 'Wrist HR')) %>%
+        filter(!is.na(Value))
+        
+      hr_factors <- levels(factor(hr_df$Signal))
+      
+      temp_hr_col_vec <- vector()
+      temp_hr_mean_col_vec <- vector()
+      for(idx in 1:length(hr_new_col_names)) {
+        if(hr_new_col_names[idx] %in% hr_factors) {
+          temp_hr_col_vec <- c(temp_hr_col_vec, hr_col_vec[idx])
+          temp_hr_mean_col_vec <- c(temp_hr_mean_col_vec, hr_mean_col_vec[idx])
+        }
+      }
+      
+      if(nrow(hr_df)>0) {
+        hr_plot <- hr_df %>%
+          ggplot(aes(x=TimeElapsed, y=Value, colour=Signal)) +
+          geom_line() +
+          scale_colour_manual(values=temp_hr_col_vec) +
+          ggtitle(paste0(subj, ': ', get_session_name(session))) +
+          xlab('Time [s]') +
+          ylab(figure_out_labels('HR')) +
+          ylim(get_hr_y_min_lim(hr_df), get_hr_y_max_lim(hr_df))
+          
+          
+        # if(is_match(condition_of_subject(subj, session), 'Bad')) {
+        #   hr_plot <- hr_plot + theme(panel.background = element_rect(fill = '#ffece6', colour = '#cc3300'))
+        # } else {
+        #   hr_plot <- hr_plot + theme_bw()
+        # }
+        # 
+        # 
+        # else if (is_match(condition_of_subject(subj, session), 'Moderate')) {
+        #   hr_plot <- hr_plot + theme(panel.background = element_rect(fill = '#fffae6', colour = '#665200'))
+        # }
+        
+        
+        bad_signal_list <- get_bad_signal_list(subj, session)
+        if('N.HR' %in% bad_signal_list & 'HR' %in% bad_signal_list) {
+          # hr_plot <- hr_plot + theme(panel.background = element_rect(fill = '#ffffe6', colour = '#666600'))
+          hr_plot <- hr_plot + theme(panel.background = element_rect(fill = '#fae6ff', colour = '#520066'))
+        } else if('N.HR' %in% bad_signal_list) {
+          hr_plot <- hr_plot + theme(panel.background = element_rect(fill = '#eafafa', colour = '#27a5a5'))
+        } else if('HR' %in% bad_signal_list) {
+          hr_plot <- hr_plot + theme(panel.background = element_rect(fill = '#ffece6', colour = '#cc3300'))
+        } else {
+          hr_plot <- hr_plot + theme_bw()
+        }
+        
+        hr_plot <- hr_plot + theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+                legend.title=element_blank(),
+                panel.grid.major = element_blank(),
+                panel.grid.minor = element_blank(),
+                axis.line = element_line(colour = "black"),
+                legend.position="bottom")
+      
+        for(idx in 1:length(hr_factors)) {
+          hr_plot <- hr_plot +
+            geom_hline(yintercept=get_mean(subj, session, hr_factors[idx]), 
+                     linetype="dashed",
+                     size=1.2,
+                     color=temp_hr_mean_col_vec[idx])
+        }
+        
+        
+        
+        
+        # print_msg(condition_of_subject(subj, session))
+        
+        temp_plot_list[[length(temp_plot_list)+1]] <- hr_plot
+        
+        # plot_list[[length(plot_list)+1]] <- hr_plot
+        # print(hr_plot)
+      }
+      
+      
+      eda_df <- filtered_df %>% 
+        filter(Subject==subj, Session==session) %>% 
+        select(common_col_names, eda_col_name) %>% 
+        gather(Signal, Value, eda_col_name) %>%
+        mutate(Signal=replace(Signal, Signal=='N.EDA', 'EDA')) %>%
+        filter(!is.na(Value))
+      
+      # print_msg(get_eda_max_y_limit(eda_df))
+      
+      if(nrow(eda_df)>0) {
+        eda_plot <- eda_df %>%
+          ggplot(aes(x=TimeElapsed, y=Value, colour=Signal)) +
+          geom_line() +
+          scale_colour_manual(values='mediumseagreen') +
+          ggtitle(paste0(subj, ': ', get_session_name(session))) +
+          xlab('Time [s]') +
+          ylab(figure_out_labels(eda_col_name)) +
+          ylim(0, get_eda_max_y_limit(eda_df)) 
+          # geom_hline(yintercept=get_session_mean(session, eda_new_col_name),
+          #            size=1.2,
+          #            color="darkgreen")
+          
+          bad_signal_list <- get_bad_signal_list(subj, session)
+          if('N.EDA' %in% bad_signal_list) {
+            eda_plot <- eda_plot + theme(panel.background = element_rect(fill = '#e6ffee', colour = '#004d1a'))
+          } else {
+            eda_plot <- eda_plot + theme_bw()
+          }
+          
+          
+          
+          eda_plot <- eda_plot +
+          theme(plot.title=element_text(hjust = 0.5, face = "bold"),
+                legend.title=element_blank(),
+                panel.grid.major = element_blank(),
+                panel.grid.minor = element_blank(),
+                axis.line = element_line(colour = "black"),
+                legend.position='bottom')
+
+        temp_plot_list[[length(temp_plot_list)+1]] <- eda_plot
+        
+        # plot_list[[length(plot_list)+1]] <- eda_plot
+        # print(eda_plot)
+        
+      } 
+      
+      if(length(temp_plot_list)!=0) {
+        grid_plot <- grid.arrange(grobs=temp_plot_list, ncol=2)
+      }
+      
+      # grid_plot <- grid.arrange(hr_plot, eda_plot, ncol=2)
+
+      ## COWPLOT
+      # grid_plot <- plot_grid(plotlist=temp_plot_list, ncol=2)
+      # print(grid_plot)
+      
+      # grid_plot <- marrangeGrob(temp_plot_list, ncol=2, nrow=1)
+      # grid_plot <- do.call(marrangeGrob, c(temp_plot_list, nrow=1, ncol=2, list(top=NULL) ))
+      # print(grid_plot)
+    }
+
+    cat('--------------------------------------------------------------------------------- ##')
+  }
+}
+```
+
+<!-- READ DATA GLOBLALLY -->
+```{r echo=FALSE, warning = FALSE, message = FALSE}
+read_data()
+```
+
+
+
+\newpage
+&nbsp;
+\newpage
+&nbsp;
+\newpage
+&nbsp;
+\newpage
+&nbsp;
+\newpage
+&nbsp;
+\newpage
+&nbsp;
+\newpage
+&nbsp;
+\newpage
+&nbsp;
+\newpage
+&nbsp;
+\newpage
+&nbsp;
+\newpage
+&nbsp;
+\newpage
+&nbsp;
+\newpage
+&nbsp;
+\newpage
+<!-- DRAW PLOTS -->
+```{r echo=FALSE, warning = FALSE, message = FALSE}
+draw_plots()
+```
