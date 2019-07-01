@@ -1,0 +1,47 @@
+"Question","Answer","Frequency"
+"Effort",2,2
+"Effort",3,6
+"Effort",4,9
+"Effort",5,22
+"Effort",6,18
+"Effort",7,4
+"Frustration",1,3
+"Frustration",2,17
+"Frustration",3,4
+"Frustration",4,7
+"Frustration",5,21
+"Frustration",6,7
+"Frustration",7,2
+"Mental Demand",1,2
+"Mental Demand",2,2
+"Mental Demand",3,8
+"Mental Demand",4,3
+"Mental Demand",5,25
+"Mental Demand",6,15
+"Mental Demand",7,6
+"Performance",1,1
+"Performance",2,8
+"Performance",3,9
+"Performance",4,2
+"Performance",5,21
+"Performance",6,12
+"Performance",7,8
+"Physical Demand",1,13
+"Physical Demand",2,20
+"Physical Demand",3,10
+"Physical Demand",4,6
+"Physical Demand",5,7
+"Physical Demand",6,5
+"Stress_Question",1,5
+"Stress_Question",2,15
+"Stress_Question",3,11
+"Stress_Question",4,7
+"Stress_Question",5,19
+"Stress_Question",6,4
+"Temporal Demand",1,3
+"Temporal Demand",2,5
+"Temporal Demand",3,6
+"Temporal Demand",4,7
+"Temporal Demand",5,18
+"Temporal Demand",6,11
+"Temporal Demand",7,11
