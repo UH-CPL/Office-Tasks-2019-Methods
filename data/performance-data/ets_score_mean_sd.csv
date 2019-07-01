@@ -1,0 +1,17 @@
+"PerformanceCriteria","Session","mean","sd","normality","subj_no"
+"Word Count (WC)","DT",325.741935483871,151.674579981571,"normal",62
+"Word Count (WC)","ST",127.129032258065,41.1532457421489,"non-normal",62
+"Char Count (CC)","DT",2000.5,915.174403337741,"normal",62
+"Char Count (CC)","ST",759.193548387097,247.435889276307,"normal",62
+"Criterion Score","DT",3.74193548387097,1.17257575337749,"non-normal",62
+"Criterion Score","ST",1.95161290322581,0.755903961174501,"non-normal",62
+"Mechanics Errors/WC","DT",0.0328944056470041,0.0216711013813622,"non-normal",62
+"Mechanics Errors/WC","ST",0.0185568645507847,0.0211313669902408,"non-normal",62
+"Grammar Errors/WC","DT",0.00428928108761749,0.00746866917058727,"non-normal",62
+"Grammar Errors/WC","ST",0.00270733807498922,0.00459924547967144,"non-normal",62
+"Usage Errors/WC","DT",0.00758641553402412,0.00802077345913791,"non-normal",62
+"Usage Errors/WC","ST",0.00540342088921539,0.00647833579543824,"non-normal",62
+"Style Errors/WC","DT",0.0374490518385029,0.0432603633005962,"non-normal",62
+"Style Errors/WC","ST",0.0760687829957731,0.0682536202281527,"non-normal",62
+"Delete Key/CC","DT",0.618287830426008,0.8928650934517,"non-normal",55
+"Delete Key/CC","ST",0.187858604004663,0.131907099680662,"non-normal",55

@@ -1,0 +1,875 @@
+---
+title: 'Performance Data Analysis'
+# output: pdf_document 
+# fontsize: 44pt
+header-includes:
+- \usepackage{booktabs}
+- \usepackage{sectsty} \sectionfont{\centering}
+output:
+  pdf_document: default
+  html_document: default
+geometry: top=3.5cm, bottom=3cm
+---
+
+
+```{r echo = FALSE, warning = FALSE, message = FALSE} 
+
+#-------------------------#
+#--------LIBRARIES--------#
+#-------------------------#
+library(readr)
+library(XLConnect)
+library(plyr)
+library(dplyr)
+library(tidyr)
+library(tidyverse)
+library(ggplot2)
+library(grid)
+library(gridExtra)
+library(ggpubr)
+library(directlabels)
+
+require(xlsx)
+library(readxl)
+library(lubridate)
+library(gsubfn)
+library(stringi)
+library(GoodmanKruskal)
+library(scales)
+
+
+
+#-------------------------#
+#-----GLOBAL VARIABLES----#
+#-------------------------#
+data_paper_dir <- getwd()
+setwd(data_paper_dir)
+
+raw_data_dir <- 'raw-dataset'
+super_session_pattern <- '^SuperSession$' 
+
+
+data_dir <- file.path(data_paper_dir, 'data')
+final_data_dir <- 'final-data-set'
+
+quantitative_data_dir <- 'Quantitative Data'
+performance_data_dir <- file.path(data_dir, 'performance-data')
+plots_dir <- file.path(data_paper_dir, 'plots')
+
+
+ets_score_master_file_name <- 'essay_score_master_file.csv'
+ets_score_file_name <- 'ets_score_final.csv'
+ets_score_long_file_name <- 'ets_score_long_final.csv'
+
+nlp_file_name <- 'essay_nlp_results.csv'
+writing_time_file_name <- 'writing_time_dual_task.csv'
+biographic_file_name <- 'biographic_data.csv'
+key_data_file_name <- 'Keyboard Data.csv'
+# essay_file_name <- 'essay_all.xlsx'
+
+good_subj_file_name <- 'subj_good_df.csv'
+
+common_col_names <- c('Subject', 
+                      'Condition', 
+                      'Session')
+ets_error_col_names <- c('GrammarErrors', 
+                         'UsageErrors', 
+                         'MechanicErrors', 
+                         'StyleErrors')
+ets_trait_col_names <- c('WordChoice', 
+                         'Conventions', 
+                         'Fluency')
+ets_performance_col_names <- c('CriterionScore', ets_error_col_names)
+
+
+default_height <- 14
+default_width <- 15
+
+
+nlp_score_df <- tibble()
+writing_time_dt_df <- tibble()
+good_subj_list <- tibble()
+
+
+#-------------------------#
+#---FUNCTION DEFINITION---#
+#-------------------------#
+convert_to_csv <- function(df, file_name) {
+  write.table(df, file = file.path(file_name), row.names=F, sep = ',')
+}
+
+specify_decimal <- function(x, k) {
+  trimws(format(round(x, k), nsmall=k))
+}
+
+remove_na <- function(df, col_list) {
+  return(df[complete.cases(df[, col_list]), ])
+}
+
+is_match <- function(str, pattern) { 
+  return(grepl(pattern, str)) 
+} 
+
+print_msg <- function(msg) {
+  print(msg)
+  message(msg)
+}
+
+replace_to_underscore <- function(str) {
+  gsubfn('.', list('.' = '_', ' ' = '_', '-' = '_'), tolower(str))
+}
+
+replace_to_space <- function(str) {
+  gsubfn('.', list('_' = ' ', '-' = ' '), str)
+}
+
+get_all_directory_list <- function(directory) { 
+  return(list.dirs(path=directory, full.names=F, recursive=F)) 
+} 
+
+get_matched_file_names <- function(directory, file_pattern) { 
+  return(list.files(path=directory, pattern=file_pattern, recursive=F)) 
+} 
+
+is_matched_string <- function(pattern, str) { 
+  return(grepl(pattern, str, perl=TRUE)) 
+} 
+
+split_camel_case <- function(str) {
+  return(gsub('([A-Z])', ' \\1', str))
+}
+
+is_significant <- function(test) {
+  return(test$p.value > 0.05)
+}
+
+check_significance <- function(test) {
+  if (is_significant(test)) {
+    return('not significant.')
+  }
+  return('significant.')
+}
+
+get_significance_sign <- function(p_value) { 
+  if (p_value > 0.05) { 
+    return(" ") 
+  } else if (p_value <= 0.001) { 
+    return("***") 
+  } else if (p_value <= 0.01) { 
+    return("**") 
+  } else if (p_value <= 0.05) { 
+    return("*") 
+  } 
+} 
+
+## Function for annotating boxplot with n.
+get_n <- function(df) { 
+  return(c(y=-Inf, vjust = -1, label=length(df))) 
+}
+
+
+save_plot <- function(plot_name, plot, width=default_width, height=default_height) {
+  plot_path <- file.path(plots_dir, paste0(plot_name, '.png'))
+  ggsave(plot_path, plot, width=width, height=height)
+  
+  plot_path <- file.path(plots_dir, paste0(plot_name, '.pdf'))
+  ggsave(plot_path, plot, device=cairo_pdf, width=width, height=height)
+}
+
+extract_writing_time <- function(session_dir, subj_name) {
+  subj_interface_file_pattern <- paste0('^[^~].*-', subj_name, '.xlsx') 
+  subj_interface_file_name <- get_matched_file_names(session_dir, subj_interface_file_pattern) 
+  
+  # We figure out the condition of the subject so we can tell everyone! 
+  condition <- NA 
+  if (is_match(subj_interface_file_name, 'intermittent')) { 
+    condition <- 'Intermittent' 
+  } else if (is_match(subj_interface_file_name, 'batch')) { 
+    condition <- 'Batch' 
+  }
+  
+  subj_interface_df <- readWorksheet(XLConnect::loadWorkbook(file.path(session_dir, subj_interface_file_name)), sheet = 'Sheet1')
+  
+  email_1_response_time <- subj_interface_df$Email.1.Response.Time
+  email_2_response_time <- subj_interface_df$Email.2.Response.Time
+  email_3_response_time <- subj_interface_df$Email.3.Response.Time
+  email_4_response_time <- subj_interface_df$Email.4.Response.Time
+  email_5_response_time <- subj_interface_df$Email.5.Response.Time
+  email_6_response_time <- subj_interface_df$Email.6.Response.Time
+  email_7_response_time <- subj_interface_df$Email.7.Response.Time
+  email_8_response_time <- subj_interface_df$Email.8.Response.Time
+
+  emails_response_time <- sum(email_1_response_time,
+                              email_2_response_time,
+                              email_3_response_time,
+                              email_4_response_time,
+                              email_5_response_time,
+                              email_6_response_time,
+                              email_7_response_time,
+                              email_8_response_time,
+                              na.rm = TRUE)
+
+  if (emails_response_time == 0) {
+    message(paste0('Error for subject ', subj_name, ': total email time is 0.'))
+    flush.console()
+    return()
+  }
+
+  essay_response_time <- (50 * 60) - emails_response_time
+
+  email_df <- tibble('Subject'=subj_name, 'Condition'=condition, 'Writing'='Emails', 'Time'=emails_response_time)
+  essay_df <- tibble('Subject'=subj_name, 'Condition'=condition, 'Writing'='Essay', 'Time'=essay_response_time)
+  writing_time_dt_df <<- rbind(writing_time_dt_df, email_df, essay_df)
+}
+
+find_good_subj_and_extract_writing_time <- function() {
+  # setwd(root_dir)
+  good_subj_list <<- read_csv(file.path(data_dir, good_subj_file_name))
+  grp_list <- get_all_directory_list(raw_data_dir)
+  
+  sapply(grp_list, function(grp_name) { 
+    grp_dir <- file.path(raw_data_dir, grp_name) 
+    subj_list <- get_all_directory_list(grp_dir) 
+    
+    sapply(subj_list, function(subj_name) { 
+    #sapply(subj_list[6], function(subj_name) { 
+      
+      subj_dir <- file.path(grp_dir, subj_name) 
+      #session_list <- list.dirs(path=subj_dir, full.names=F, recursive=F) 
+      session_list <- get_all_directory_list(subj_dir) 
+      session_list <- session_list[is_matched_string(super_session_pattern, session_list)] 
+      
+      sapply(session_list, function(session_name) { 
+      #sapply(session_list[3], function(session_name) { 
+        
+        session_dir <- file.path(getwd(), subj_dir, session_name) 
+        
+        tryCatch({ 
+          if(subj_name %in% good_subj_list$Subject) {
+            extract_writing_time(session_dir, subj_name)
+            
+            print_msg(paste0(grp_name, '-', subj_name, '-', session_name, ': SUCCESSFUL'))
+          } else {
+            print_msg(paste0(grp_name, '-', subj_name, '-', session_name, ': NOT PROCESSED'))
+          }
+        }, 
+        warning=function(cond) { 
+          print_msg('----------------------------------------------------------') 
+          print_msg(paste0(grp_name, '-', subj_name, '-', session_name, ': WARNING')) 
+          print_msg(paste0(cond, '\n')) 
+        }, 
+        error=function(cond) { 
+          print_msg('----------------------------------------------------------') 
+          print_msg(paste0(grp_name, '-', subj_name, '-', session_name, ': ERROR!!')) 
+          print_msg(paste0(cond, '\n')) 
+        }) 
+      }) 
+    }) 
+  })
+  
+  
+  writing_time_dt_df <<- writing_time_dt_df %>% 
+    mutate(EmailType = case_when(
+      is_match(Condition, 'B') ~ paste0(Writing, ' - Batch Email'),
+      is_match(Condition, 'I') ~ paste0(Writing, ' - Intermittent Email')))
+  
+  convert_to_csv(writing_time_dt_df, file.path(performance_data_dir, writing_time_file_name))
+}
+
+read_data <- function() {
+  nlp_score_df <<- read_csv(file.path(performance_data_dir, nlp_file_name))
+  writing_time_dt_df <<- read_csv(file.path(performance_data_dir, writing_time_file_name))
+    
+  good_subj_list <<- read_csv(file.path(data_dir, good_subj_file_name))
+
+  nlp_score_df <<- merge(good_subj_list, nlp_score_df, by='Subject') %>% 
+    mutate(Essay=fct_recode(Essay, 'ST'='WB', 'DT'='DT'))
+  
+  
+  
+  
+  
+  
+  key_str_df <<- read_csv(file.path(data_dir, final_data_dir, quantitative_data_dir, key_data_file_name)) %>% 
+    rename(Subject=Participant_ID) %>% 
+    filter(Is_Key_Up==0,
+           Key=='BACK' | Key=='DELETE') %>% 
+    group_by(Subject, Group, Treatment) %>% 
+    summarise(Key_No=n()) 
+  
+  ## This part is to remove the subjects who has only one session key stroke data
+  temp_key_str_df <- key_str_df %>% 
+    group_by(Subject) %>% 
+    summarise(Treatment_No=n()) %>% 
+    filter(Treatment_No==2) %>% 
+    select(-Treatment_No)
+  print(str(temp_key_str_df))
+  
+  
+  key_str_df <<- key_str_df %>% 
+    filter(Subject %in% temp_key_str_df$Subject)
+}
+
+get_bin_width <- function(col_name) {
+  if (col_name=='WordCount') {
+    return(10)
+  } else if (col_name=='SentenceCount') {
+    return(1)
+  }
+}
+
+draw_nlp_hist_plot <- function(col_name, nlp_score_mean_df) {
+  hist_plot <- nlp_score_df %>% 
+    ggplot(aes(x=nlp_score_df[[col_name]])) + 
+    geom_histogram(aes(y=..density..),      # Histogram with density instead of count on y-axis
+                 binwidth=get_bin_width(col_name),
+                 colour='black', 
+                 fill='white') +
+    geom_density(alpha=.2, 
+                 fill='royalblue1') +
+    geom_vline(data=nlp_score_mean_df, 
+               mapping=aes(xintercept=nlp_score_mean_df[[paste0('Mean', col_name)]]),
+               color='red', 
+               linetype='dashed', 
+               size=1) +
+    # facet_wrap(~Essay, ncol=1, scales='free_y') +
+    facet_wrap(~Essay, ncol=1) +
+    xlab(split_camel_case(col_name)) +
+    ylab('Density') +
+    theme_bw() +
+    theme(text = element_text(size=20),
+          axis.text.x = element_text(size=16),
+          strip.text.x = element_text(size=18),
+          panel.spacing = unit(1.5, 'lines'))
+    
+  print(hist_plot)
+  save_plot(tolower(col_name), hist_plot)
+}
+
+draw_nlp_plots <- function() {
+  # essay_type_levels <- levels(factor(nlp_score_df$Essay))
+  # for (essay_type in essay_type_levels) {
+  #   temp_nlp_score_df <- nlp_score_df[nlp_score_df$Essay==essay_type, ]
+  # }
+  
+  nlp_score_mean_df <- nlp_score_df %>%
+    group_by(Essay) %>%
+    summarise(MeanWordCount=mean(WordCount, na.rm=T),
+              MeanSentenceCount=mean(SentenceCount, na.rm=T))
+  
+  col_names <- c('WordCount', 'SentenceCount')
+  for(col_name in col_names) {
+    draw_nlp_hist_plot(col_name, nlp_score_mean_df)
+  }
+}
+
+draw_essay_email_plots <- function() {
+  writing_type_levels <- levels(factor(writing_time_dt_df$Writing))
+  for (writing_type in writing_type_levels) {
+    temp_writing_time_dt_df <- writing_time_dt_df[writing_time_dt_df$Writing==writing_type, ]
+
+    hist_plot <- temp_writing_time_dt_df %>%
+      ggplot(aes(x=Time)) +
+      geom_histogram(aes(y=..density..),      # Histogram with density instead of count on y-axis
+                   binwidth=100,
+                   colour='black',
+                   fill='white') +
+      geom_density(alpha=.2,
+                   fill='royalblue1') +
+      # facet_wrap(~EmailType, ncol=1) +
+      xlab('Time [s]') +
+      ylab('Density') +
+      theme_bw() +
+      theme(text = element_text(size=20),
+            axis.text.x = element_text(size=16),
+            strip.text.x = element_text(size=18),
+            panel.spacing = unit(1.5, 'lines'))
+
+    print(hist_plot)
+    save_plot(paste0(tolower(writing_type), '_time'), hist_plot)
+
+    hist_plot <- hist_plot +
+       facet_wrap(~EmailType, ncol=1)
+
+    print(hist_plot)
+    save_plot(paste0(tolower(writing_type), '_time_splitted'), hist_plot)
+  }
+}
+
+
+draw_essay_email_combined_plots <- function() {
+  writing_time_mean_df <- writing_time_dt_df %>%
+    group_by(EmailType) %>%
+    summarise(MeanTime=mean(Time, na.rm=T))
+  
+  hist_plot <- writing_time_dt_df %>% 
+      ggplot(aes(x=Time)) +
+      geom_histogram(aes(y=..density..),
+                   binwidth=100,
+                   colour='black',
+                   fill='white') +
+      geom_density(alpha=.2,
+                   fill='royalblue1') +
+      geom_vline(data=writing_time_mean_df, 
+               mapping=aes(xintercept=writing_time_mean_df$MeanTime),
+               color='red', 
+               linetype='dashed', 
+               size=1) +
+      facet_wrap(~EmailType, ncol=2) +
+      # facet_wrap(vars(Writing, EmailType), ncol=2) +
+      xlab('Time [s]') +
+      ylab('Density') +
+      theme_bw() +
+      theme(text = element_text(size=20),
+            axis.text.x = element_text(size=16),
+            strip.text.x = element_text(size=18),
+            panel.spacing = unit(1.5, 'lines'))
+  
+  print(hist_plot)
+  save_plot('email_essay_batch_intermittent', hist_plot)
+}
+
+draw_essay_email_stacked_bar_plots <- function() {
+  stacked_plot <- writing_time_dt_df %>%
+    ggplot(aes(fill=Writing, y=Time, x=reorder(Subject, -Time))) +
+    facet_wrap(~Condition, ncol=1, scales='free') +
+    geom_bar(stat='identity') +
+    ylab('Time [s]') +
+    guides(fill = guide_legend(reverse=T)) +
+    theme(text = element_text(size=20),
+          axis.text.x = element_text(angle = 90, hjust = 1),
+          panel.spacing = unit(1.5, 'lines'),
+          legend.position='top',
+          legend.spacing.x = unit(0.2, 'cm'),
+          legend.title=element_blank())
+  print(stacked_plot)
+  save_plot('email_essay_stacked_plot', stacked_plot)
+  
+  # plot_list <- list()
+  # for (condition in levels(factor(writing_time_dt_df$Condition))) {
+  #   temp_writing_time_dt_df <- writing_time_dt_df %>%
+  #     filter(Condition==condition) 
+  #   # %>%
+  #   #   arrange(desc(Time))
+  # 
+  #   print_msg(str(temp_writing_time_dt_df))
+  #   stacked_plot <- temp_writing_time_dt_df %>%
+  #     ggplot(aes(fill=Writing, x=reorder(Subject, -Time), y=Time)) +
+  #     # facet_wrap(~Condition, ncol=1, scales='free') +
+  #     # facet_grid(. ~ condition) +
+  #     geom_bar(stat='identity') +
+  #     ylab('Time [s]') +
+  #     guides(fill = guide_legend(reverse=T)) +
+  #     theme(text = element_text(size=20),
+  #           axis.text.x = element_text(angle = 90, hjust = 1),
+  #           panel.spacing = unit(1.5, 'lines'),
+  #           legend.position='top',
+  #           legend.spacing.x = unit(0.2, 'cm'),
+  #           legend.title=element_blank())
+  #   print(stacked_plot)
+  #   plot_list[[length(plot_list)+1]] <- stacked_plot
+  # }
+  # 
+  # grid_plot <- grid.arrange(do.call('grid.arrange', c(plot_list, ncol=1)))
+  # save_plot('email_essay_stacked_plot', stacked_plot)
+}
+
+
+draw_writing_time_plots <- function() {
+  # draw_essay_email_plots()
+  # draw_essay_email_combined_plots()
+  draw_essay_email_stacked_bar_plots()
+}
+
+draw_email_time_regression_plots <- function() {
+  biographic_df <- read_csv(file.path(performance_data_dir, biographic_file_name))
+  email_time_df <- writing_time_dt_df[writing_time_dt_df$Writing=='Emails', ]
+  email_df <- merge(biographic_df, email_time_df, by.x='SubjectID', by.y='Subject')
+  print_msg(str(email_df))
+  
+  cor_test <- cor.test(email_df$Daily_Email_Frequency, email_df$Time, method = 'pearson')
+  print_msg(cor_test)
+  
+  subj_no <- email_df %>% summarize(n = n())
+  annot_label <- paste('n =', subj_no, 
+                       ', p =', specify_decimal(cor_test$p.value, 3), 
+                       ', R =', specify_decimal(cor_test$estimate, 3))
+  print_msg(annot_label)
+  
+  
+  plot <- email_df %>%
+    ggplot(aes(Daily_Email_Frequency, Time)) +
+    geom_point(size = 3) +
+    geom_smooth(method = 'lm') +
+    # ggtitle(title) + 
+    theme_bw() + 
+    xlab('Daily Email Frequency') +
+    ylab('Time [s]') +
+    scale_y_continuous(expand = c(0.2, 0, 0.2, 0)) +
+    annotate('text',
+         x=max(email_df$Daily_Email_Frequency)-2,
+         y=Inf,
+         hjust=1,
+         vjust=1.5,
+         label=annot_label,
+         fontface = 'italic', 
+         size = 6) +
+    theme(text = element_text(size=16),
+          axis.title = element_text(size = 16),
+          plot.title = element_text(hjust = 0.5, size = 20, face = 'bold')) 
+  print(plot)
+  
+  save_plot('email_time_regression', plot)
+}
+
+extract_ets_score <- function() {
+  ets_score_df <<- read_csv(file.path(performance_data_dir, ets_score_master_file_name))[, c(1:6)]
+  colnames(ets_score_df) <<- c('Subject', ets_performance_col_names)
+  ## GET THE FIRST NUMBER
+  ets_score_df$CriterionScore <<- stri_extract_first_regex(ets_score_df$CriterionScore, '[0-9]+')
+  
+  ets_score_df <<- ets_score_df %>%
+    separate(Subject, common_col_names) %>%  ##Seperate Subject col into 3 col
+    mutate(Session = fct_recode(Session, 'ST'='WB', 'DT'='DT')) %>% 
+    inner_join(nlp_score_df, by=c('Subject', 'Condition', 'Session'='Essay')) %>% 
+    left_join(key_str_df, by=c('Subject', 'Condition'='Group', 'Session'='Treatment')) %>%
+    select(common_col_names, CriterionScore, CharCount, WordCount, ets_error_col_names, Key_No) %>%
+    # na.omit() %>%   ##T085 data missing
+    mutate(GrammarErrorsRelative=GrammarErrors/WordCount,
+           MechanicErrorsRelative=MechanicErrors/WordCount,
+           UsageErrorsRelative=UsageErrors/WordCount,
+           StyleErrorsRelative=StyleErrors/WordCount,
+           DeleteKeyRelative=Key_No/CharCount)
+
+  convert_to_csv(ets_score_df, file.path(performance_data_dir, ets_score_file_name))
+    
+  ets_score_long_df <- ets_score_df %>%
+    select(-GrammarErrors, -MechanicErrors, -UsageErrors, -StyleErrors, -Key_No) %>% 
+    gather(PerformanceCriteria, Value, -Subject, -Condition, -Session)
+  convert_to_csv(ets_score_long_df, file.path(performance_data_dir, ets_score_long_file_name))
+}
+
+
+get_ets_data <- function() {
+  # ets_score_df <- read_csv(file.path(performance_data_dir, ets_score_file_name))
+  ets_score_long_df <- read_csv(file.path(performance_data_dir, ets_score_long_file_name))
+  
+  ets_plot_df <- ets_score_long_df %>%
+    mutate(PerformanceCriteria = recode_factor(PerformanceCriteria,
+                                               'WordCount'='Word Count (WC)',
+                                               'CharCount'='Char Count (CC)',
+                                               'CriterionScore'='Criterion Score',
+                                               'MechanicErrorsRelative'='Mechanics Errors/WC',
+                                               'GrammarErrorsRelative'='Grammar Errors/WC',
+                                               'UsageErrorsRelative'='Usage Errors/WC',
+                                               'StyleErrorsRelative'='Style Errors/WC',
+                                               'DeleteKeyRelative' = 'Delete Key/CC'
+                                               )) 
+}
+
+get_significance_for_each_performance <- function() {
+  ets_plot_df <- get_ets_data() 
+  significance_df <- data.frame()
+  
+  for (performance_criteria in levels(factor(ets_plot_df$PerformanceCriteria))) {
+    temp_ets_test_df <- ets_plot_df[ets_plot_df$PerformanceCriteria==performance_criteria, ] %>% 
+      spread(Session, Value) %>% 
+      na.omit()
+    
+    #CHECK!!!
+    # t_test <- t.test(data=temp_ets_test_df, temp_ets_test_df$DT, temp_ets_test_df$ST, paired=T)
+    # t_test <- t.test(data=temp_ets_test_df, temp_ets_test_df$DT-temp_ets_test_df$ST, mu=0)
+    # print(t_test)
+    
+    #CHECK!!!
+    # w_test <- wilcox.test(data=temp_ets_test_df, temp_ets_test_df$DT, temp_ets_test_df$ST, paired=T)
+    # w_test <- wilcox.test(data=temp_ets_test_df, temp_ets_test_df$DT-temp_ets_test_df$ST, mu=0)
+    # print(w_test)
+    
+    if (is_normal(temp_ets_test_df$DT) & is_normal(temp_ets_test_df$ST)) {
+      test_type <- 't-test'
+      test <- t.test(data=temp_ets_test_df, temp_ets_test_df$DT, temp_ets_test_df$ST, paired=T)
+    } else {
+      test_type <- 'w-test'
+      test <- wilcox.test(data=temp_ets_test_df, temp_ets_test_df$DT, temp_ets_test_df$ST, paired=T)
+    }
+    
+    
+    temp_significance_df <- data.frame( "PerformanceCriteria" = performance_criteria, 
+                                        "Significance" = get_significance_sign(test$p.value),
+                                        "Subj_No"=nrow(temp_ets_test_df))
+    significance_df <- rbind(significance_df, temp_significance_df)
+
+  
+    print_msg('-------------------------------------------------------------------------')
+    print_msg(paste0('------------------     ', performance_criteria, '     ------------------------'))
+    print_msg('-------------------------------------------------------------------------')
+
+    print(paste0('Test Type: ', test_type))
+    print_msg(test)
+    print_msg(paste('The mean differences between the HR from two sensors are',
+                    check_significance(test)))
+
+    print_msg('')
+    print_msg('')
+    print_msg('')
+  }
+  
+  print_msg(str(significance_df))
+  return(significance_df)
+}
+
+is_normal <- function(data) {
+  return(shapiro.test(data)$p.value >= 0.05)
+}
+
+get_normality <- function(data) {
+  # data=data[complete.cases(data), ]
+  if (is_normal(data)) {
+    return('normal')
+  }
+  return('non-normal')
+}
+
+draw_ets_plots <- function() {
+  ets_plot_df <- get_ets_data()
+  mean_df <- ddply(ets_plot_df, 
+                   .(PerformanceCriteria, Session), 
+                   summarise, 
+                   mean=mean(Value, na.rm=T),
+                   sd=sd(Value, na.rm=T),
+                   normality=get_normality(Value),
+                   subj_no=sum(!is.na(Value)))
+  convert_to_csv(mean_df, file.path(performance_data_dir, 'ets_score_mean_sd.csv'))
+  
+  ##############################################################################
+  ###########  Make a df like mean_df with PerformanceCriteria  ################
+  ###########  Manually by draw_ets_rank_test_plots() function  ################
+  ##############################################################################
+  significance_df <- get_significance_for_each_performance()
+  # print(str(mean_df))
+  # print(mean_df$annotation)
+  
+  ets_plot <- ets_plot_df %>%
+    # ggplot(aes(x=Value, y=..scaled..)) +
+    ggplot(aes(x=Value)) +
+    facet_wrap(~PerformanceCriteria, ncol=2, scales='free') +
+    # geom_histogram(aes(y=..density.., fill=Session, color=Session), #Histogram with density instead of count on y-axis
+    #              show.legend=F,
+    #              alpha=.5) +
+    geom_density(aes(fill=Session), alpha=.5) + 
+    geom_vline(data=mean_df, 
+               aes(xintercept=mean, color=Session), 
+               linetype="dashed",
+               size=1.2,
+               show.legend=F) +
+    xlab('') +
+    ylab('Probability Density Functions') +
+    # scale_y_continuous(labels = scientific) +
+    guides(fill = guide_legend(reverse=T)) +
+    geom_text(
+      data    = significance_df,
+      mapping = aes(x = Inf, y = Inf, label = paste0('n = ', Subj_No)),
+      hjust   = 1.1,
+      vjust   = 1.5,
+      size    = 5
+    ) +
+    geom_text(
+      data    = significance_df,
+      mapping = aes(x = Inf, y = Inf, label = Significance),
+      hjust   = 1.2,
+      vjust   = 2.5,
+      size    = 8
+    ) +
+    theme_bw() +
+    theme(text = element_text(size=20),
+          panel.spacing=unit(2, 'lines'),
+          legend.position='top',
+          # legend.key.size = unit(1, "cm"),
+          legend.spacing.x = unit(0.1, 'cm'), ## Distance between legend key and legend text
+          legend.text = element_text(margin=margin(r=25, unit="pt")), ## Distance between legends
+          legend.title=element_blank(),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          plot.margin = unit(c(0.2, 1, 0.2, 0.2), "lines"), ##top, right, bottom, left
+          axis.line = element_line(colour = "black"))
+
+  save_plot('ets_score', ets_plot)
+  
+  ###############################################################################################
+  ####                                 MEAN LINE PLOT                                       #####
+  ####https://stackoverflow.com/questions/10942360/how-to-get-geom-vline-to-honor-facet-wrap#####
+  ###############################################################################################
+}
+
+
+draw_ets_rank_test_plots <- function() {
+  ets_plot_df <- get_ets_data() 
+  # %>% 
+  #   spread(Session, Value) %>% 
+  #   mutate(session_diff=DT-ST)
+  
+  # print(str(ets_plot_df))
+  # print(str(ets_plot_df))
+    
+  plot_list <- list()
+  for (performance_criteria in levels(factor(ets_plot_df$PerformanceCriteria))) {
+    temp_ets_test_df <- ets_plot_df[ets_plot_df$PerformanceCriteria==performance_criteria, ] %>% 
+      spread(Session, Value)
+    # print(str(temp_ets_test_df))
+    
+    temp_ets_box_plot_df <- temp_ets_test_df %>%
+      mutate(session_diff=DT-ST) %>%
+      select(-DT, -ST) %>%
+      gather(Signal, Value, -Subject, -Condition, -PerformanceCriteria)
+    # # print(performance_criteria)
+    print(str(temp_ets_box_plot_df))
+    
+    #CHECK!!!
+    t_test <- t.test(data=temp_ets_test_df, temp_ets_test_df$DT, temp_ets_test_df$ST, paired=T)
+    # t_test <- t.test(data=temp_ets_test_df, temp_ets_test_df$DT-temp_ets_test_df$ST, mu=0)
+    # print(t_test)
+    
+    #CHECK!!!
+    w_test <- wilcox.test(data=temp_ets_test_df, temp_ets_test_df$DT, temp_ets_test_df$ST, paired=T)
+    # w_test <- wilcox.test(data=temp_ets_test_df, temp_ets_test_df$DT-temp_ets_test_df$ST, mu=0)
+    # print(w_test)
+    
+    print_msg('-------------------------------------------------------------------------')
+    # print_msg(performance_criteria)
+    ##BOXPLOT
+    plot <- temp_ets_box_plot_df %>%
+      ggplot(aes(Signal, Value)) +
+      geom_boxplot(width=0.3) +
+      ggtitle(performance_criteria) +
+      ylab('Frequency/Count') +
+      theme_bw(base_size = 18) + 
+      theme(axis.title.x = element_blank()) +
+      geom_hline(yintercept=0, linetype="dashed", color = "red", alpha = 0.6, size=1) + 
+      stat_summary(fun.y = mean, color = "darkred", geom = "point", shape = 3, size = 4, show_guide = FALSE) +
+      stat_summary(fun.data = get_n, geom = "text", size = 6) +
+      scale_x_discrete(labels=c("session_diff" = "DT - ST")) +
+      scale_y_continuous(expand = c(0.2, 0, 0.2, 0)) +
+      annotate("text", x=1, y=Inf, label= get_significance_sign(w_test$p.value), vjust = 1.2, size = 10) +
+      theme(text = element_text(size=16),
+            axis.title = element_text(size = 16),
+            plot.title = element_text(hjust = 0.5, size = 20, face = "bold"),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            axis.line = element_line(colour = "black"))
+    
+    print(plot)
+    plot_list[[length(plot_list) + 1]] <- plot
+  
+    print_msg(t_test)
+    print_msg(paste('The mean differences between the HR from two sensors are',
+                    check_significance(t_test)))
+
+
+    print_msg(w_test)
+    print_msg(paste('The mean differences between the HR from two sensors are',
+                    check_significance(w_test)))
+
+    print_msg('-------------------------------------------------------------------------')
+  }
+  
+}
+
+draw_ets_regression_plot <- function() {
+  ets_score_df <- read_csv(file.path(performance_data_dir, ets_score_file_name))
+  biographic_df <- read_csv(file.path(performance_data_dir, biographic_file_name))
+  ets_bio_df <- merge(biographic_df, ets_score_df, by.x='SubjectID', by.y='Subject')
+  
+  # ets_bio_df <- ets_bio_df %>% mutate(Writing_Proficiency = recode(Writing_Proficiency,
+  #                                       '1' = '1',
+  #                                       '2' = '2',
+  #                                       '3' = '3',
+  #                                       '4' = '4',
+  #                                       '5' = '5',
+  #                                       '6' = '6',
+  #                                       '7' = '7'))
+  # 
+  # 
+  # ets_bio_df <- ets_bio_df %>%
+  #   mutate(Writing_Proficiency=factor(Writing_Proficiency, levels = c(1, 2, 3, 4, 5, 6, 7)))
+  
+  print_msg(str(ets_bio_df))
+  
+  
+  session_level <- levels(factor(ets_bio_df$Session))
+  for (session in session_level) {
+    temp_ets_bio_df <- ets_bio_df[ets_bio_df$Session==session, ]
+    
+    cor_test <- cor.test(temp_ets_bio_df$Writing_Proficiency,
+                     temp_ets_bio_df[['Criterion Score']],
+                     method = 'spearman')
+    print_msg(cor_test)
+    
+    subj_no <- temp_ets_bio_df %>% summarize(n = n())
+    annot_label <- paste0('n = ', subj_no, 
+                       ', p = ', specify_decimal(cor_test$p.value, 4), 
+                       ', R = ', specify_decimal(cor_test$estimate, 3))
+    print_msg(annot_label)
+    # print_msg(min(as.numeric(temp_ets_bio_df[['Writing_Proficiency']])))
+    # print_msg(max(as.numeric(temp_ets_bio_df[['Criterion Score']])))
+  
+  
+    reg_plot <- temp_ets_bio_df %>%
+      ggplot(aes(Writing_Proficiency, temp_ets_bio_df[['Criterion Score']])) +
+      geom_point(size=3, color='red', alpha=0.2) +
+      geom_smooth(method = 'lm') +
+      xlab('Writing Proficiency') +
+      ylab('ETS Criterion Score') +
+      scale_y_continuous(expand=c(0.2, 0, 0.2, 0)) +
+      annotate('text',
+        # x=min(as.numeric(temp_ets_bio_df[['Writing_Proficiency']])),
+        # y=max(as.numeric(temp_ets_bio_df[['Criterion Score']])),
+        # x=4,
+        # y=6,
+        x=-Inf,
+        y=Inf,
+        hjust=0.00001,
+        vjust=2,
+        label=annot_label,
+        fontface = 'italic', 
+        size = 6) +
+      # xlim(1, 7) +
+      # ylim(1, 6) +
+      theme(text = element_text(size=20))
+    
+    print(reg_plot)
+    save_plot(paste0('ets_regression_', replace_to_underscore(tolower(session))), reg_plot)
+      
+  }
+}
+
+
+draw_ets_score_plots <- function() {
+  extract_ets_score()
+  draw_ets_plots()
+  # draw_ets_rank_test_plots()
+  # draw_ets_regression_plot()
+}
+
+
+draw_plots <- function() {
+  # draw_nlp_plots()
+  # draw_writing_time_plots()
+  # draw_email_time_regression_plots()
+  draw_ets_score_plots()
+}
+
+``` 
+
+
+<!-- READ DATA GLOBLALLY -->
+```{r echo=FALSE, warning = FALSE, message = FALSE}
+find_good_subj_and_extract_writing_time()
+read_data()
+```
+
+
+<!-- DRAW PLOTS -->
+```{r echo=FALSE, warning = FALSE, message = FALSE}
+draw_plots()
+```
