@@ -364,32 +364,32 @@ read_data()
 
 
 
-\newpage
-&nbsp;
-\newpage
-&nbsp;
-\newpage
-&nbsp;
-\newpage
-&nbsp;
-\newpage
-&nbsp;
-\newpage
-&nbsp;
-\newpage
-&nbsp;
-\newpage
-&nbsp;
-\newpage
-&nbsp;
-\newpage
-&nbsp;
-\newpage
-&nbsp;
-\newpage
-&nbsp;
-\newpage
-&nbsp;
+<!-- \newpage -->
+<!-- &nbsp; -->
+<!-- \newpage -->
+<!-- &nbsp; -->
+<!-- \newpage -->
+<!-- &nbsp; -->
+<!-- \newpage -->
+<!-- &nbsp; -->
+<!-- \newpage -->
+<!-- &nbsp; -->
+<!-- \newpage -->
+<!-- &nbsp; -->
+<!-- \newpage -->
+<!-- &nbsp; -->
+<!-- \newpage -->
+<!-- &nbsp; -->
+<!-- \newpage -->
+<!-- &nbsp; -->
+<!-- \newpage -->
+<!-- &nbsp; -->
+<!-- \newpage -->
+<!-- &nbsp; -->
+<!-- \newpage -->
+<!-- &nbsp; -->
+<!-- \newpage -->
+<!-- &nbsp; -->
 \newpage
 <!-- DRAW PLOTS -->
 ```{r echo=FALSE, warning = FALSE, message = FALSE}

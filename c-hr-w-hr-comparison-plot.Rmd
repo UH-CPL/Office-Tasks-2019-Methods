@@ -31,7 +31,7 @@ library(gsubfn)
 #-------------------------#
 #-----GLOBAL VARIABLES----#
 #-------------------------#
-project_dir <- "T:/Google Drive/University of Houston/CS - UH/@Research - CPL/@Projects/NsfStressDataCuration/nsf-data-paper-scripts"
+project_dir <- getwd()
 setwd(project_dir)
 
 data_dir <- 'data'
