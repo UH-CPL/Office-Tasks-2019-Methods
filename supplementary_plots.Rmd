@@ -73,6 +73,13 @@ hr_col_list <- c(common_col_names, hr_col_names)
 hr_col_vec <- c('coral', 'dodgerblue')
 hr_mean_col_vec <- c('coral3', 'dodgerblue3')
 
+
+dummy_df <- data.frame(x = c(0, 100, 0, 100), 
+                       y = c(100, 0, 0, 100), 
+                       group=c('a', 'a', 'b', 'b'))
+
+
+
 filtered_df <- tibble()
 mean_df <- tibble()
 mean_of_mean_df <- tibble()
@@ -194,9 +201,25 @@ get_bad_signal_list <- function(subj, session) {
   return(signal_list$Signal)
 }
 
+draw_dummy_plot <- function() {
+  dummy_plot <- ggplot(dummy_df, aes(x=x, y=y, group=group)) + 
+    geom_line() +
+    theme_bw() +
+    theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line = element_line(colour = "black"))
+  return(dummy_plot)
+}
+
 draw_plots <- function() {
-  subj_list <- levels(factor(filtered_df$Subject))
-  # subj_list <- c('T011', 'T031')
+  # subj_list <- levels(factor(filtered_df$Subject))
+  subj_list <- c('T037', 'T046')
   
   for(subj in subj_list) {
     
@@ -288,6 +311,9 @@ draw_plots <- function() {
         
         # plot_list[[length(plot_list)+1]] <- hr_plot
         # print(hr_plot)
+        
+      } else {
+        temp_plot_list[[length(temp_plot_list)+1]] <- draw_dummy_plot()
       }
       
       
@@ -335,7 +361,9 @@ draw_plots <- function() {
         # plot_list[[length(plot_list)+1]] <- eda_plot
         # print(eda_plot)
         
-      } 
+      } else {
+        temp_plot_list[[length(temp_plot_list)+1]] <- draw_dummy_plot()
+      }
       
       if(length(temp_plot_list)!=0) {
         grid_plot <- grid.arrange(grobs=temp_plot_list, ncol=2)
