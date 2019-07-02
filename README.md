@@ -14,7 +14,7 @@ Packages are available on CRAN and can be installed using a simple call to `inst
     install.packages('PackageName')
 
 	
-## Scripts Set
+## Script Set
 1. **Data Curation**
 	- dc-curate-and-process-physiological-data.R
 		- For each group and subjects the script does the following:
@@ -37,7 +37,7 @@ Packages are available on CRAN and can be installed using a simple call to `inst
 	- qc-second-phase.Rmd
 		- Filter data in the second phase
 4. **Validation Scripts**
-	- vs-supplementary_plots.Rmd
+	- vs-supplementary-plots.Rmd
 	- vs-time-series-plots.Rmd
 	- vs-validation-plots.R
 	- vs-mean-signal-distribution.Rmd
@@ -47,16 +47,18 @@ Packages are available on CRAN and can be installed using a simple call to `inst
 	- vs-questionnaire-data-analysis.Rmd
 	- vs-time-series-plot-hrv.R
 	- vs-validation-plot-hrv.R
-
-
-#### Other Scripts:
-- formate-final-data.R
+5. **Utility Scripts**
+- dc-format-final-data.R
 	- Convert all the final dataset user-friendly version
-- filter-pp.R
-    - Script to remove noise from PP signal
-- down-sample-pp.R
-    - Script to downsample data to 1 frame per second
+	- **Note:** This is the last script to run. Please do not run any script following.
 - common-functions.R
-	- The common functions are used in almost all files
-- score-psychometrics.R
+	- The functions from the script are called from almost all scripts
+- dc-filter-pp.R
+	- This script is called from dc-curate-and-process-physiological-data.R
+    - Script to remove noise from PP signal
+- dc-down-sample-pp.R
+	- This script is called from dc-curate-and-process-physiological-data.R
+    - Script to downsample data to 1 frame per second
+- dc-score-psychometrics.R
+	- This script is called from vs-questionnaire-data-analysis.Rmd
     - The scoring calculation for psychometrics variables
