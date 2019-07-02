@@ -51,7 +51,7 @@ Packages are available on CRAN and can be installed using a simple call to `inst
 
 #### Other Scripts:
 - formate-final-data.R
-		- Convert all the final dataset user-friendly version
+	- Convert all the final dataset user-friendly version
 - filter-pp.R
     - Script to remove noise from PP signal
 - down-sample-pp.R
