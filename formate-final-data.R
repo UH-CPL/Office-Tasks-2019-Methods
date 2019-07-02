@@ -5,6 +5,8 @@ library(readr)
 library(dplyr)
 
 
+
+
 #-------------------------#
 #-----GLOBAL VARIABLES----#
 #-------------------------#
@@ -32,11 +34,11 @@ physiological_col_order <- c('Participant_ID',
                              'Time',
                              'Treatment_Time',
                              'Task',
-                             'PP',
-                             'EDA',
-                             'BR',
-                             'Chest_HR',
-                             'Wrist_HR')
+                             'PP_QC',
+                             'EDA_QC',
+                             'BR_QC',
+                             'Chest_HR_QC',
+                             'Wrist_HR_QC')
 
 key_str_col_order <- c('Participant_ID',
                    'Group',
@@ -45,6 +47,10 @@ key_str_col_order <- c('Participant_ID',
                    'Task',
                    'Is_Key_Up',
                    'Key')
+
+
+
+
 
 #-------------------------#
 #---FUNCTION DEFINITION---#
@@ -65,9 +71,11 @@ make_physiological_df <- function() {
            Time=CovertedTime,
            Treatment_Time=TimeElapsed,
            # TaskMarkers=Task,
-           EDA=N.EDA,
-           Chest_HR=HR,
-           Wrist_HR=N.HR) %>% 
+           PP_QC=PP,
+           BR_QC=BR,
+           EDA_QC=N.EDA,
+           Chest_HR_QC=HR,
+           Wrist_HR_QC=N.HR) %>% 
     mutate(Treatment = recode(Treatment,
                             'RestingBaseline' = 'RB',
                             'BaselineWriting' = 'ST',
@@ -93,11 +101,12 @@ make_performance_df <- function() {
            Grammar_Errors=GrammarErrors,
            Usage_Errors=UsageErrors,
            Style_Errors=StyleErrors,
-           Mechanic_Errors_Relative=MechanicErrorsRelative,
-           Grammar_Errors_Relative=GrammarErrorsRelative,
-           Usage_Errors_Relative=UsageErrorsRelative,
-           Style_Errors_Relative=StyleErrorsRelative,
-           Delete_Key_Relative=DeleteKeyRelative) %>% 
+           Delete_Key_Count=Key_No,
+           'Mechanic_Errors/WC'=MechanicErrorsRelative,
+           'Grammar_Errors/WC'=GrammarErrorsRelative,
+           'Usage_Errors/WC'=UsageErrorsRelative,
+           'Style_Errors/WC'=StyleErrorsRelative,
+           'Delete_Key/CC'=DeleteKeyRelative) %>% 
     select(Participant_ID,
            Group,
            Treatment,
@@ -108,14 +117,14 @@ make_performance_df <- function() {
            Grammar_Errors,
            Usage_Errors,
            Style_Errors,
-           Key_No,
-           Mechanic_Errors_Relative,
-           Grammar_Errors_Relative,
-           Usage_Errors_Relative,
-           Style_Errors_Relative,
-           Delete_Key_Relative)
+           Delete_Key_Count,
+           'Mechanic_Errors/WC',
+           'Grammar_Errors/WC',
+           'Usage_Errors/WC',
+           'Style_Errors/WC',
+           'Delete_Key/CC')
   print(str(performance_df))
-  convert_to_csv(performance_df, file.path(data_dir, final_data_dir, quantitative_data_dir, 'Report Scores.csv'))
+  convert_to_csv(performance_df, file.path(data_dir, final_data_dir, quantitative_data_dir, 'Report Data.csv'))
 }
 
 
@@ -124,17 +133,18 @@ make_rr_df <- function() {
     rename(Participant_ID=Subject,
            Treatment=Session,
            Task=TaskMarkers,
-           Treatment_Time=TreatmentTime) %>% 
+           Treatment_Time=TreatmentTime,
+           RR_QC=RR) %>% 
     select(Participant_ID,
            Group,
            Treatment,
            Task,
            Time,
            Treatment_Time,
-           RR)
+           RR_QC)
 
   # print(str(rr_df))
-  convert_to_csv(rr_df, file.path(data_dir, final_data_dir, supplementary_data_dir, 'RR.csv'))
+  convert_to_csv(rr_df, file.path(data_dir, final_data_dir, supplementary_data_dir, 'HRV.csv'))
 }
 
 
@@ -144,6 +154,8 @@ make_rr_df <- function() {
 make_physiological_df()
 make_performance_df()
 make_rr_df()
+
+
 
 
 ### make_questionnaire_df() ## This is done in questionnaire data analysis
