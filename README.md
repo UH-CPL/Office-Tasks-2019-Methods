@@ -15,8 +15,7 @@ Packages are available on CRAN and can be installed using a simple call to `inst
 
 	
 ## Script Set
-####### Please run the following scripts sequentially
-----------------
+##### Please run the following scripts sequentially
 1. **Data Curation**
 	- dc-curate-and-process-physiological-data.R
 		- For each group and subjects the script does the following:
