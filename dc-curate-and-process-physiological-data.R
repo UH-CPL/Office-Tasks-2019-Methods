@@ -22,8 +22,8 @@ current_dir <- dirname(rstudioapi::getSourceEditorContext()$path)
 setwd(current_dir)
 
 
-source('filter-pp.R')
-source('down-sample-pp.R')
+source('dc-filter-pp.R')
+source('dc-down-sample-pp.R')
 
 
 re_extract_pp_dir <- 're-extracted-signals'
