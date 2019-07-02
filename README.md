@@ -48,17 +48,17 @@ Packages are available on CRAN and can be installed using a simple call to `inst
 	- vs-time-series-plot-hrv.R
 	- vs-validation-plot-hrv.R
 5. **Utility Scripts**
-- dc-format-final-data.R
-	- Convert all the final dataset user-friendly version
-	- **Note:** This is the last script to run. Please do not run any script following.
-- common-functions.R
-	- The functions from the script are called from almost all scripts
-- dc-filter-pp.R
-	- This script is called from dc-curate-and-process-physiological-data.R
-    - Script to remove noise from PP signal
-- dc-down-sample-pp.R
-	- This script is called from dc-curate-and-process-physiological-data.R
-    - Script to downsample data to 1 frame per second
-- dc-score-psychometrics.R
-	- This script is called from vs-questionnaire-data-analysis.Rmd
-    - The scoring calculation for psychometrics variables
+	- dc-format-final-data.R
+		- Convert all the final dataset user-friendly version
+		- **Note:** This is the last script to run. Please do not run any script following.
+	- common-functions.R
+		- The functions from the script are called from almost all scripts
+	- dc-filter-pp.R
+		- This script is called from dc-curate-and-process-physiological-data.R
+	    - Script to remove noise from PP signal
+	- dc-down-sample-pp.R
+		- This script is called from dc-curate-and-process-physiological-data.R
+	    - Script to downsample data to 1 frame per second
+	- dc-score-psychometrics.R
+		- This script is called from vs-questionnaire-data-analysis.Rmd
+	    - The scoring calculation for psychometrics variables
