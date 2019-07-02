@@ -50,7 +50,7 @@ Packages are available on CRAN and can be installed using a simple call to `inst
 5. **Utility Scripts**
 	- dc-format-final-data.R
 		- Convert all the final dataset user-friendly version
-		- **Note:** This is the last script to run. Please do not run any script following.
+		- **Note:** This is the last script to run. **Please do not run any script following.**
 	- common-functions.R
 		- The functions from the script are called from almost all scripts
 	- dc-filter-pp.R
