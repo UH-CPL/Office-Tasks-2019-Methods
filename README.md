@@ -1,11 +1,9 @@
 # Multimodal-Email-Study
------------------
 This repository contains the R scripts to curate, quality control, and validate the raw data collected
 via the S-Interface and other tools in the Email Stress project.
 
 
 ## Getting Started
------------------
 
 #### Prerequisites
 - R and required packages
@@ -17,7 +15,6 @@ Packages are available on CRAN and can be installed using a simple call to `inst
 
 	
 ## Scripts Set
------------------
 1. **Data Curation**
 	- curate-and-process-physiological-data.R
 		- For each group and subjects the script does the following:
