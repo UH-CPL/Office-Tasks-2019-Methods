@@ -28,7 +28,7 @@ library(directlabels)
 library(gsubfn)
 library(cowplot)
 
-source('dc-score-psychometrics.R')
+source('us-score-psychometrics.R')
 
 
 #-------------------------#
