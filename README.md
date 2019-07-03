@@ -1,6 +1,6 @@
 # Multimodal-Email-Study
-This repository contains the R scripts to curate, quality control, and validate the raw data collected
-via the S-Interface and other tools in the Email Stress project.
+This repository contains the R scripts to curate, ensure quality control, and validate the raw data collected
+via the S-Interface and other tools in the "Office Tasks 2019" project.
 
 
 ## Getting Started
@@ -16,27 +16,27 @@ Packages are available on CRAN and can be installed using a simple call to `inst
 	
 ## Script Set
 ##### Please run the following scripts sequentially
-1. **Data Curation**
+1. **Data Curation (dc)**
 	- dc-curate-and-process-physiological-data.R
-		- For each group and subjects the script does the following:
-			- Read the *pp.csv (raw perinasal perspiration signal file), remove noise, downsample by 1 fps
-			- Read the session markers file and split the session with the PP signal.
-			- Read the files from E4 and Zephyr Bioharness signal, downsample each signal and merge with PP signal.
+		- For each participant the script does the following:
+			- Reads the *pp.csv (original perinasal perspiration signal data), removes noise, downsamples to 1 frame per second (fps)
+			- Reads the session markers file and splits each PP signal into treatment segments.
+			- Reads the E4 and BioHarness signal files, downsamples them, and merges them with the PP signal file.
 	- dc-nlp-processor.R
 		- Note: Run the following line once:
 			- initCoreNLP(mem = "4g")
 	- dc-essay-email-extractor.R
-		- Gather and merge all report and email response for 63 subjects
-2. **Quality Control - first level**
+		- Gathers and merges all report and email responses for n=63 participants.
+2. **Quality Control - first level (qc1)**
 	- qc-first-phase.Rmd
-		- This script is for generating the combined file for all signals, for
-			- Merged 1fps data - without quality control
-				- Change the variable value to FALSE: is\_filter\_data = F
-			- Filtered data - quality control phase 1
-				- Change the variable value to TRUE: is\_filter\_data = T
-3. **Quality Control - second level**
+		- Generates the combined file for all signals:
+			- Unfiltered data option (@1 fps)
+				- Set the variable value to FALSE: is\_filter\_data = F
+			- Quality Control 1 data option (@1 fps)
+				- Set the variable value to TRUE: is\_filter\_data = T
+3. **Quality Control - second level (qc2)**
 	- qc-second-phase.Rmd
-		- Filter data in the second phase
+		- Performs a second level of filering (quality control 2)
 4. **Validation Scripts**
 	- vs-supplementary-plots.Rmd
 	- vs-time-series-plots.Rmd
@@ -50,16 +50,13 @@ Packages are available on CRAN and can be installed using a simple call to `inst
 	- vs-validation-plot-hrv.R
 5. **Utility Scripts**
 	- dc-format-final-data.R
-		- Convert all the final dataset user-friendly version
-		- **Note:** This is the last script to run. **Please do not run any script following.**
+		- Converts the curated dataset into a user-friendly version
+		- **Note:** This is the last script to run. **Please do not run any script after this.**
 	- common-functions.R
-		- The functions from the script are called from almost all scripts
+		- Useful functions that are called from almost all scripts
 	- dc-filter-pp.R
-		- This script is called from dc-curate-and-process-physiological-data.R
-	    - Script to remove noise from PP signal
+	    - Removes noise from PP signals. It is called from dc-curate-and-process-physiological-data.R
 	- dc-down-sample-pp.R
-		- This script is called from dc-curate-and-process-physiological-data.R
-	    - Script to downsample data to 1 frame per second
+	    - Downsamples data to 1 fps. It is called from dc-curate-and-process-physiological-data.R
 	- dc-score-psychometrics.R
-		- This script is called from vs-questionnaire-data-analysis.Rmd
-	    - The scoring calculation for psychometrics variables
+	    - Scores psychometric variables. It is called from vs-questionnaire-data-analysis.Rmd
