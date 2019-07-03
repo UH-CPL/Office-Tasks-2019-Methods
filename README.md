@@ -37,7 +37,7 @@ Packages are available on CRAN and can be installed using a simple call to `inst
 3. **Quality Control - second level (qc2)**
 	- qc-second-phase.Rmd
 		- Performs a second level of filering (quality control 2)
-4. **Validation Scripts**
+4. **Validation Scripts (vs)**
 	- vs-supplementary-plots.Rmd
 	- vs-time-series-plots.Rmd
 	- vs-validation-plots.R
