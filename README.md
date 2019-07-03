@@ -36,7 +36,7 @@ Packages are available on CRAN and can be installed using a simple call to `inst
 				- Set the variable value to TRUE: is\_filter\_data = T
 3. **Quality Control - second level (qc2)**
 	- qc-second-phase.Rmd
-		- Performs a second level of filering (quality control 2)
+		- Performs a second level of filering (quality control 2).
 4. **Validation Scripts (vs)**
 	- vs-supplementary-plots.Rmd
 	- vs-time-series-plots.Rmd
@@ -50,10 +50,10 @@ Packages are available on CRAN and can be installed using a simple call to `inst
 	- vs-validation-plot-hrv.R
 5. **Utility Scripts**
 	- dc-format-final-data.R
-		- Converts the curated dataset into a user-friendly version
+		- Converts the curated dataset into a user-friendly version.
 		- **Note:** This is the last script to run. **Please do not run any script after this.**
 	- common-functions.R
-		- Useful functions that are called from almost all scripts
+		- Useful functions that are called from almost all scripts.
 	- dc-filter-pp.R
 	    - Removes noise from PP signals. It is called from dc-curate-and-process-physiological-data.R
 	- dc-down-sample-pp.R
