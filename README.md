@@ -54,12 +54,12 @@ Packages are available on CRAN and can be installed using a simple call to `inst
 		- Converts the curated dataset into a user-friendly version.
 		- **Note:** This is the last script to run. **Please do not run any script after this.**
 		
-5. **Utility Scripts**
+5. **Utility Scripts (us)**
 	- common-functions.R
 		- Useful functions that are called from almost all scripts.
-	- dc-filter-pp.R
+	- us-filter-pp.R
 	    - Removes noise from PP signals. It is called from dc-curate-and-process-physiological-data.R
-	- dc-down-sample-pp.R
+	- us-down-sample-pp.R
 	    - Downsamples data to 1 fps. It is called from dc-curate-and-process-physiological-data.R
-	- dc-score-psychometrics.R
+	- us-score-psychometrics.R
 	    - Scores psychometric variables. It is called from vs-questionnaire-data-analysis.Rmd
