@@ -6,7 +6,8 @@ via the S-Interface and other tools in the "Office Tasks 2019" project.
 ## Getting Started
 
 #### Prerequisites
-- R and required packages
+- R and RStudio
+- Required packages
 
 #### Installing R Packages
 Packages are available on CRAN and can be installed using a simple call to `install.packages()`:
