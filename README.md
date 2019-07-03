@@ -53,8 +53,9 @@ Packages are available on CRAN and can be installed using a simple call to `inst
 	- format-final-data.R
 		- Converts the curated dataset into a user-friendly version.
 		- **Note:** This is the last script to run. **Please do not run any script after this.**
-		
-5. **Utility Scripts (us)**
+---------------------------------------------------------------------------------------------------------
+
+**Utility Scripts (us)**
 	- common-functions.R
 		- Useful functions that are called from almost all scripts.
 	- us-filter-pp.R
