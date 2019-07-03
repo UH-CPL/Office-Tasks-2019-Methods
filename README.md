@@ -28,14 +28,14 @@ Packages are available on CRAN and can be installed using a simple call to `inst
 	- dc-essay-email-extractor.R
 		- Gathers and merges all report and email responses for n=63 participants.
 2. **Quality Control - first level (qc1)**
-	- qc-first-phase.Rmd
+	- qc1.Rmd
 		- Generates the combined file for all signals:
 			- Unfiltered data option (@1 fps)
 				- Set the variable value to FALSE: is\_filter\_data = F
 			- Quality Control 1 data option (@1 fps)
 				- Set the variable value to TRUE: is\_filter\_data = T
 3. **Quality Control - second level (qc2)**
-	- qc-second-phase.Rmd
+	- qc2.Rmd
 		- Performs a second level of filering (quality control 2).
 4. **Validation Scripts (vs)**
 	- vs-supplementary-plots.Rmd
