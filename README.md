@@ -19,7 +19,7 @@ Packages are available on CRAN and can be installed using a simple call to `inst
 1. **Data Curation (dc)**
 	- dc-curate-and-process-physiological-data.R
 		- For each participant the script does the following:
-			- Reads the *pp.csv (original perinasal perspiration signal data), removes noise, downsamples to 1 frame per second (fps)
+			- Reads the *pp.csv (original perinasal perspiration signal data), removes noise, downsamples to 1 frame per second (fps).
 			- Reads the session markers file and splits each PP signal into treatment segments.
 			- Reads the E4 and BioHarness signal files, downsamples them, and merges them with the PP signal file.
 	- dc-nlp-processor.R
