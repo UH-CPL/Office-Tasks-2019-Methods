@@ -48,10 +48,13 @@ Packages are available on CRAN and can be installed using a simple call to `inst
 	- vs-questionnaire-data-analysis.Rmd
 	- vs-time-series-plot-hrv.R
 	- vs-validation-plot-hrv.R
-5. **Utility Scripts**
-	- dc-format-final-data.R
+
+4. **FINISHER**
+	- format-final-data.R
 		- Converts the curated dataset into a user-friendly version.
 		- **Note:** This is the last script to run. **Please do not run any script after this.**
+		
+5. **Utility Scripts**
 	- common-functions.R
 		- Useful functions that are called from almost all scripts.
 	- dc-filter-pp.R
