@@ -7,6 +7,8 @@ output:
   pdf_document: default
   html_document: default
 geometry: top=3.5cm, bottom=3cm
+
+knit: (function(inputFile, encoding) { rmarkdown::render(inputFile, encoding = encoding, output_file = file.path('plots', 'supplementary.pdf')) })
 ---
 
 
@@ -25,7 +27,6 @@ library(ggpubr)
 # library(directlabels)
 library(gsubfn)
 
-# source('T:/Google Drive/University of Houston/CS - UH/@Research - CPL/@Projects/NsfStressDataCuration/nsf-data-paper-scripts/@multiplot.R')
 
 
 #-------------------------#
@@ -201,25 +202,34 @@ get_bad_signal_list <- function(subj, session) {
   return(signal_list$Signal)
 }
 
-draw_dummy_plot <- function() {
+draw_dummy_plot <- function(title) {
   dummy_plot <- ggplot(dummy_df, aes(x=x, y=y, group=group)) + 
     geom_line() +
+    ggtitle(title) +
     theme_bw() +
-    theme(axis.title.x=element_blank(),
+    xlab(' ') +
+    ylab(' ') +
+    theme(
+        # axis.title.x=element_blank(),
+        # axis.title.y=element_blank(),
+        axis.title.x=element_text(size=82),
+        axis.title.y=element_text(size=24),
         axis.text.x=element_blank(),
-        axis.ticks.x=element_blank(),
-        axis.title.y=element_blank(),
         axis.text.y=element_blank(),
+        axis.ticks.x=element_blank(),
         axis.ticks.y=element_blank(),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
+        plot.title=element_text(hjust = 0.5, face = "bold"),
+        legend.position='bottom',
         axis.line = element_line(colour = "black"))
   return(dummy_plot)
 }
 
 draw_plots <- function() {
-  # subj_list <- levels(factor(filtered_df$Subject))
-  subj_list <- c('T037', 'T046')
+  subj_list <- levels(factor(filtered_df$Subject))
+  # subj_list <- c('T037', 'T046')
+  # subj_list <- c('T061', 'T063')
   
   for(subj in subj_list) {
     
@@ -252,12 +262,14 @@ draw_plots <- function() {
         }
       }
       
+      title <- paste0(subj, ': ', get_session_name(session))
+      
       if(nrow(hr_df)>0) {
         hr_plot <- hr_df %>%
           ggplot(aes(x=TimeElapsed, y=Value, colour=Signal)) +
           geom_line() +
           scale_colour_manual(values=temp_hr_col_vec) +
-          ggtitle(paste0(subj, ': ', get_session_name(session))) +
+          ggtitle(title) +
           xlab('Time [s]') +
           ylab(figure_out_labels('HR')) +
           ylim(get_hr_y_min_lim(hr_df), get_hr_y_max_lim(hr_df))
@@ -287,7 +299,8 @@ draw_plots <- function() {
           hr_plot <- hr_plot + theme_bw()
         }
         
-        hr_plot <- hr_plot + theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+        hr_plot <- hr_plot + 
+          theme(plot.title = element_text(hjust = 0.5, face = "bold"),
                 legend.title=element_blank(),
                 panel.grid.major = element_blank(),
                 panel.grid.minor = element_blank(),
@@ -313,7 +326,7 @@ draw_plots <- function() {
         # print(hr_plot)
         
       } else {
-        temp_plot_list[[length(temp_plot_list)+1]] <- draw_dummy_plot()
+        temp_plot_list[[length(temp_plot_list)+1]] <- draw_dummy_plot(title)
       }
       
       
@@ -331,7 +344,7 @@ draw_plots <- function() {
           ggplot(aes(x=TimeElapsed, y=Value, colour=Signal)) +
           geom_line() +
           scale_colour_manual(values='mediumseagreen') +
-          ggtitle(paste0(subj, ': ', get_session_name(session))) +
+          ggtitle(title) +
           xlab('Time [s]') +
           ylab(figure_out_labels(eda_col_name)) +
           ylim(0, get_eda_max_y_limit(eda_df)) 
@@ -349,7 +362,7 @@ draw_plots <- function() {
           
           
           eda_plot <- eda_plot +
-          theme(plot.title=element_text(hjust = 0.5, face = "bold"),
+            theme(plot.title=element_text(hjust = 0.5, face = "bold"),
                 legend.title=element_blank(),
                 panel.grid.major = element_blank(),
                 panel.grid.minor = element_blank(),
@@ -362,7 +375,7 @@ draw_plots <- function() {
         # print(eda_plot)
         
       } else {
-        temp_plot_list[[length(temp_plot_list)+1]] <- draw_dummy_plot()
+        temp_plot_list[[length(temp_plot_list)+1]] <- draw_dummy_plot(title)
       }
       
       if(length(temp_plot_list)!=0) {

@@ -1108,7 +1108,10 @@ modify_final_df <- function() {
            NASA_Performance='Performance',
            NASA_Effort='Effort',
            NASA_Frustration='Frustration'
-           ) %>% 
+           ) %>%
+    mutate(Group = recode(Group,
+                          'IH' = 'CH',
+                          'IL' = 'CL')) %>% 
     select('Participant_ID', 
            Group, 
            Age,
