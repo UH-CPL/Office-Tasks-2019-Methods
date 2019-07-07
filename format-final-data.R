@@ -21,6 +21,7 @@ performance_data_dir <- 'performance-data'
 final_data_dir <- 'final-data-set'
 quantitative_data_dir <- 'Quantitative Data'
 supplementary_data_dir <- 'Supplementary Data'
+index_data_dir <- 'index-data'
 
 qc2_filtered_file_name <- 'full_df_second_phase_filtered.csv'
 qc2_mean_file_name <- 'result_df_second_phase.csv'
@@ -29,6 +30,7 @@ performance_file_name <- 'ets_score_final.csv'
 rr_file_name <- 'rr_df_filtered_qc1.csv'
 key_data_file_name <- 'key_str.csv'
 index_file_name <- 'index.csv'
+index_final_file_name <- 'index_final.csv'
 
 # index_df_row_range <- c(1:315)
 index_df_row_range <- 315
@@ -53,24 +55,6 @@ key_str_col_order <- c('Participant_ID',
                    'Task',
                    'Is_Key_Up',
                    'Key')
-
-index_col_order <- c('Participant_ID',
-                     'Group',
-                     'Treatment',
-                     'PP',
-                     'N.EDA', 
-                     'BR', 
-                     'N.HR',
-                     'HR',
-                     'RR_HR',
-                     'RR',
-                     'KS',
-                     'KeyStroke',
-                     'ReportEmail',
-                     'ReportPerformance'
-                     )
-
-
 
 status_missing <- 0
 status_valid <- 1
@@ -202,8 +186,8 @@ make_key_str_df <- function() {
 
 
 make_initial_index_df <- function() {
-  index_ks_rr_df <- read.csv(file.path(data_dir, 'index_ks_rr.csv'))
-  index_df <- read.csv(file.path(data_dir, 'index_base.csv')) %>%
+  index_ks_rr_df <- read.csv(file.path(data_dir, index_data_dir, 'index_ks_rr.csv'))
+  index_df <- read.csv(file.path(data_dir, index_data_dir, 'index_base.csv')) %>%
     mutate(Session = recode_factor(Session,
                                    'RestingBaseline'='RB',
                                    'BaselineWriting'='ST',
@@ -215,8 +199,8 @@ make_initial_index_df <- function() {
            Treatment=Session,
            Group=Condition) %>% 
     left_join(index_ks_rr_df, by=c('Participant_ID', 'Group', 'Treatment')) %>% 
-    select(Participant_ID, Group, Treatment, KeyStroke, RR)
-  convert_to_csv(index_df, file.path(data_dir, index_file_name))
+    select(Participant_ID, Group, Treatment, KS_Raw, RR_Raw)
+  convert_to_csv(index_df, file.path(data_dir, index_data_dir, index_file_name))
 }
 
 sum_without_na <- function(df) {
@@ -233,9 +217,9 @@ add_row_for_sum <- function(status) {
                                                            "BR" = sum_without_na(temp_indx_df$BR == status), 
                                                            "HR" = sum_without_na(temp_indx_df$HR == status), 
                                                            "N.HR" = sum_without_na(temp_indx_df$N.HR == status),
-                                                           "KeyStroke" = sum_without_na(temp_indx_df$KeyStroke == status),
+                                                           "KS_Raw" = sum_without_na(temp_indx_df$KS_Raw == status),
                                                            "KS" = sum_without_na(temp_indx_df$KS == status),
-                                                           "RR" = sum_without_na(temp_indx_df$RR == status),
+                                                           "RR_Raw" = sum_without_na(temp_indx_df$RR_Raw == status),
                                                            "RR_HR" = sum_without_na(temp_indx_df$RR_HR == status),
                                                            "ReportEmail" = sum_without_na(temp_indx_df$ReportEmail == status),
                                                            "ReportPerformance" = sum_without_na(temp_indx_df$ReportPerformance == status)
@@ -244,7 +228,7 @@ add_row_for_sum <- function(status) {
 }
 
 get_physiological_index <- function() {
-  index_df <<- read.csv(file.path(data_dir, index_file_name))[c(1: index_df_row_range), ]
+  index_df <<- read.csv(file.path(data_dir, index_data_dir, index_file_name))[c(1: index_df_row_range), ]
   filtered_subj_df <<- read.csv(file.path(data_dir, filtered_subj_file_name)) %>% 
     mutate(Session = recode_factor(Session,
                                    'RestingBaseline'='RB',
@@ -292,7 +276,7 @@ get_physiological_index <- function() {
 get_rr_index <- function() {
   index_df <<- index_df %>% 
     mutate(RR_HR=HR) %>% 
-    mutate(RR_HR=replace(RR_HR, Participant_ID %in% c('T051', 'T092'), 0))
+    mutate(RR_HR=replace(RR_HR, RR_Raw==0, 0))
 }
 
 
@@ -349,18 +333,66 @@ make_index_df <- function() {
   add_row_for_sum(0)
   add_row_for_sum(-1)
   # add_row_for_sum(NA)
+  
+  
+  
+  
+  index_col_order <- c('Participant_ID',
+                       'Group',
+                       'Treatment',
+                       'PP',
+                       'N.EDA', 
+                       'BR', 
+                       'N.HR',
+                       'HR',
+                       'RR_HR',
+                       'RR_Raw',
+                       'KS',
+                       'KS_Raw',
+                       'ReportEmail',
+                       'ReportPerformance'
+  )
 
-  convert_to_csv(index_df[, index_col_order], file.path(data_dir, index_file_name))
+  
+  convert_to_csv(index_df[, index_col_order], file.path(data_dir, index_data_dir, index_file_name))
+  
+  
+  
+  index_df <<- index_df %>% 
+    rename(EDA=N.EDA,
+           Chest_HR=HR,
+           Wrist_HR=N.HR,
+           RR=RR_HR,
+           KeyStroke=KS
+           ) %>% 
+    select(Participant_ID,
+           Group,
+           Treatment,
+           PP,
+           EDA, 
+           BR, 
+           Chest_HR,
+           Wrist_HR,
+           RR,
+           KeyStroke,
+           ReportEmail,
+           ReportPerformance
+           ) %>% 
+  slice(1:index_df_row_range+1)
+    
+  convert_to_csv(index_df, file.path(data_dir, index_data_dir, index_final_file_name))
+  convert_to_csv(index_df, file.path(data_dir, final_data_dir, index_final_file_name))
+  
 }
 
 
 #-------------------------#
 #-------Main Program------#
 #-------------------------#
-make_physiological_df()
-make_performance_df()
-make_key_str_df()
-make_rr_df()
+# make_physiological_df()
+# make_performance_df()
+# make_key_str_df()
+# make_rr_df()
 
 make_index_df()
 

@@ -563,7 +563,7 @@ get_ets_data <- function() {
                                                'GrammarErrorsRelative'='Grammar Errors/WC',
                                                'UsageErrorsRelative'='Usage Errors/WC',
                                                'StyleErrorsRelative'='Style Errors/WC',
-                                               'DeleteKeyRelative' = 'Delete Key/CC'
+                                               'DeleteKeyRelative' = 'Delete Keys/CC'
                                                )) 
 }
 
@@ -668,11 +668,12 @@ draw_ets_plots <- function() {
     # scale_y_continuous(labels = scientific) +
     guides(fill = guide_legend(reverse=T)) +
     geom_text(
-      data    = significance_df,
-      mapping = aes(x = Inf, y = Inf, label = paste0('n = ', Subj_No)),
-      hjust   = 1.1,
-      vjust   = 1.5,
-      size    = 5
+      data     = significance_df,
+      mapping  = aes(x = Inf, y = Inf, label = paste0('n = ', Subj_No)),
+      fontface = 3,
+      hjust    = 1.1,
+      vjust    = 1.5,
+      size     = 5
     ) +
     geom_text(
       data    = significance_df,
