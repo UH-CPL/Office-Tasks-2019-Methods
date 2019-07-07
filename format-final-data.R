@@ -66,7 +66,8 @@ index_col_order <- c('Participant_ID',
                      'RR',
                      'KS',
                      'KeyStroke',
-                     'Report'
+                     'ReportEmail',
+                     'ReportPerformance'
                      )
 
 
@@ -144,7 +145,7 @@ make_performance_df <- function() {
            'Grammar_Errors/WC'=GrammarErrorsRelative,
            'Usage_Errors/WC'=UsageErrorsRelative,
            'Style_Errors/WC'=StyleErrorsRelative,
-           'Delete_Key/CC'=DeleteKeyRelative) %>% 
+           'Delete_Keys/CC'=DeleteKeyRelative) %>% 
     mutate(Group = recode(Group,
                           'IH' = 'CH',
                           'IL' = 'CL')) %>% 
@@ -163,7 +164,7 @@ make_performance_df <- function() {
            'Grammar_Errors/WC',
            'Usage_Errors/WC',
            'Style_Errors/WC',
-           'Delete_Key/CC')
+           'Delete_Keys/CC')
   print(str(performance_df))
   convert_to_csv(performance_df, file.path(data_dir, final_data_dir, quantitative_data_dir, 'Report Data.csv'))
 }
@@ -236,12 +237,29 @@ add_row_for_sum <- function(status) {
                                                            "KS" = sum_without_na(temp_indx_df$KS == status),
                                                            "RR" = sum_without_na(temp_indx_df$RR == status),
                                                            "RR_HR" = sum_without_na(temp_indx_df$RR_HR == status),
-                                                           "Report" = sum_without_na(temp_indx_df$Report == status)
+                                                           "ReportEmail" = sum_without_na(temp_indx_df$ReportEmail == status),
+                                                           "ReportPerformance" = sum_without_na(temp_indx_df$ReportPerformance == status)
                                       
   )) 
 }
 
 get_physiological_index <- function() {
+  index_df <<- read.csv(file.path(data_dir, index_file_name))[c(1: index_df_row_range), ]
+  filtered_subj_df <<- read.csv(file.path(data_dir, filtered_subj_file_name)) %>% 
+    mutate(Session = recode_factor(Session,
+                                   'RestingBaseline'='RB',
+                                   'BaselineWriting'='ST',
+                                   'StressCondition'='PM',
+                                   'DualTask'='DT',
+                                   'Presentation'='PR'))
+  mean_df <<- read.csv(file.path(data_dir, qc2_mean_file_name)) %>%
+    mutate(Session = recode_factor(Session,
+                                   'RestingBaseline'='RB',
+                                   'BaselineWriting'='ST',
+                                   'StressCondition'='PM',
+                                   'DualTask'='DT',
+                                   'Presentation'='PR'))
+  
   for (signal in physiological_signal_list) {
     for (subj in levels(mean_df$Subject)) {
       for (session in levels(mean_df$Session)) {
@@ -294,42 +312,36 @@ get_ks_index <- function() {
 }
 
 
-get_report_index <- function() {
+get_report_performance_index <- function() {
   performance_df <- read_csv(file.path(data_dir, performance_data_dir, performance_file_name)) %>% 
     rename(Participant_ID=Subject,
            Group=Condition,
            Treatment=Session) %>%
     group_by(Participant_ID, Treatment) %>% 
-    summarize(Report=1) %>% 
-    select(Participant_ID, Treatment, Report)
+    summarize(ReportPerformance=1) %>% 
+    select(Participant_ID, Treatment, ReportPerformance)
   
   index_df <<- index_df %>% 
     left_join(performance_df, by=c('Participant_ID','Treatment')) %>% 
-    mutate(Report=replace(Report, Treatment %in% c('ST', 'DT') & is.na(Report), 0))
+    mutate(ReportPerformance=replace(ReportPerformance, Treatment %in% c('ST', 'DT') & is.na(ReportPerformance), 0))
 }
 
-make_physiological_index_df <- function() {
-  index_df <<- read.csv(file.path(data_dir, index_file_name))[c(1: index_df_row_range), ]
-  filtered_subj_df <<- read.csv(file.path(data_dir, filtered_subj_file_name)) %>% 
-    mutate(Session = recode_factor(Session,
-                                   'RestingBaseline'='RB',
-                                   'BaselineWriting'='ST',
-                                   'StressCondition'='PM',
-                                   'DualTask'='DT',
-                                   'Presentation'='PR'))
-  mean_df <<- read.csv(file.path(data_dir, qc2_mean_file_name)) %>%
-    mutate(Session = recode_factor(Session,
-                                   'RestingBaseline'='RB',
-                                   'BaselineWriting'='ST',
-                                   'StressCondition'='PM',
-                                   'DualTask'='DT',
-                                   'Presentation'='PR'))
+get_report_email_index <- function() {
+  index_df <<- index_df %>% 
+    mutate(ReportEmail=case_when(Treatment %in% c('ST', 'DT')~1))
+  print(str(index_df))
+}
+
+
+
+make_index_df <- function() {
+  make_initial_index_df()
   
-  ## Get physiological index
   get_physiological_index()
   get_rr_index()
   get_ks_index()
-  get_report_index()
+  get_report_performance_index()
+  get_report_email_index()
   
   
   ## Getting sum of each status(1, 0, and -1)
@@ -337,23 +349,18 @@ make_physiological_index_df <- function() {
   add_row_for_sum(0)
   add_row_for_sum(-1)
   # add_row_for_sum(NA)
-  
-  convert_to_csv(index_df[, index_col_order], file.path(data_dir, index_file_name))
-}
 
-make_index_df <- function() {
-  make_initial_index_df()
-  make_physiological_index_df()
+  convert_to_csv(index_df[, index_col_order], file.path(data_dir, index_file_name))
 }
 
 
 #-------------------------#
 #-------Main Program------#
 #-------------------------#
-# make_physiological_df()
-# make_performance_df()
-# make_key_str_df()
-# make_rr_df()
+make_physiological_df()
+make_performance_df()
+make_key_str_df()
+make_rr_df()
 
 make_index_df()
 
