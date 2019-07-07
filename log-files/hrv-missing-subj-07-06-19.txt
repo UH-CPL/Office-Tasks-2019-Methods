@@ -1,0 +1,14 @@
+Invalid rr data for:  T031 ,  DT
+Missing rr data for:  T051 ,  ST
+Missing rr data for:  T051 ,  DT
+Missing rr data for:  T051 ,  PR
+Missing rr data for:  T051 ,  RB
+Missing rr data for:  T051 ,  PM
+Missing rr data for:  T092 ,  ST
+Missing rr data for:  T092 ,  DT
+Missing rr data for:  T092 ,  PR
+Missing rr data for:  T092 ,  RB
+Missing rr data for:  T092 ,  PM
+Invalid rr data for:  T128 ,  PR
+Invalid rr data for:  T154 ,  PR
+Invalid rr data for:  T157 ,  PR

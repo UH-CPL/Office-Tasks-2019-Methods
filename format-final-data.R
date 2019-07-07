@@ -30,7 +30,8 @@ rr_file_name <- 'rr_df_filtered_qc1.csv'
 key_data_file_name <- 'key_str.csv'
 index_file_name <- 'index.csv'
 
-index_df_row_range <- c(1:315)
+# index_df_row_range <- c(1:315)
+index_df_row_range <- 315
 
 physiological_signal_list <- c('PP', 'N.EDA', 'BR', 'HR', 'N.HR')
 physiological_col_order <- c('Participant_ID',
@@ -59,10 +60,14 @@ index_col_order <- c('Participant_ID',
                      'PP',
                      'N.EDA', 
                      'BR', 
-                     'HR', 
                      'N.HR',
+                     'HR',
+                     'RR_HR',
+                     'RR',
+                     'KS',
                      'KeyStroke',
-                     'RR')
+                     'Report'
+                     )
 
 
 
@@ -196,6 +201,7 @@ make_key_str_df <- function() {
 
 
 make_initial_index_df <- function() {
+  index_ks_rr_df <- read.csv(file.path(data_dir, 'index_ks_rr.csv'))
   index_df <- read.csv(file.path(data_dir, 'index_base.csv')) %>%
     mutate(Session = recode_factor(Session,
                                    'RestingBaseline'='RB',
@@ -207,12 +213,103 @@ make_initial_index_df <- function() {
     rename(Participant_ID=Subject,
            Treatment=Session,
            Group=Condition) %>% 
+    left_join(index_ks_rr_df, by=c('Participant_ID', 'Group', 'Treatment')) %>% 
     select(Participant_ID, Group, Treatment, KeyStroke, RR)
   convert_to_csv(index_df, file.path(data_dir, index_file_name))
 }
 
+sum_without_na <- function(df) {
+  return(sum(df, na.rm = T))
+}
+
+add_row_for_sum <- function(status) {
+  temp_indx_df <- index_df[c(1:index_df_row_range), ]
+  index_df <<- rbind(index_df, tibble("Participant_ID" = paste0("TOTAL: ", length(unique(temp_indx_df$Participant_ID))),
+                                                           "Group"	= "-----", 
+                                                           "Treatment"	= "----", 
+                                                           "PP" = sum_without_na(temp_indx_df$PP == status), 
+                                                           "N.EDA"	= sum_without_na(temp_indx_df$N.EDA == status), 
+                                                           "BR" = sum_without_na(temp_indx_df$BR == status), 
+                                                           "HR" = sum_without_na(temp_indx_df$HR == status), 
+                                                           "N.HR" = sum_without_na(temp_indx_df$N.HR == status),
+                                                           "KeyStroke" = sum_without_na(temp_indx_df$KeyStroke == status),
+                                                           "KS" = sum_without_na(temp_indx_df$KS == status),
+                                                           "RR" = sum_without_na(temp_indx_df$RR == status),
+                                                           "RR_HR" = sum_without_na(temp_indx_df$RR_HR == status),
+                                                           "Report" = sum_without_na(temp_indx_df$Report == status)
+                                      
+  )) 
+}
+
+get_physiological_index <- function() {
+  for (signal in physiological_signal_list) {
+    for (subj in levels(mean_df$Subject)) {
+      for (session in levels(mean_df$Session)) {
+        ## If the mean signal is missing or NA. 
+        ## We will check if we filtered out that signal or not
+        if (is_null(mean_df[mean_df$Subject==subj & mean_df$Session==session, signal])) {
+          
+          ## If the signal is not in filtered_subj_df, it means it was not there at raw dataset
+          if (is_null(filtered_subj_df[filtered_subj_df$Subject==subj & 
+                                       filtered_subj_df$Session==session, 'Signal'])) {
+            status <- status_missing
+            
+            ## If the signal is not in filtered_subj_df, it means we discarded it
+          } else if (filtered_subj_df[filtered_subj_df$Subject==subj & 
+                                      filtered_subj_df$Session==session, 'Signal']==signal) {
+            status <- status_discarded
+          }
+          
+        } else {
+          status <- status_valid
+        }
+        
+        index_df[index_df$Participant_ID==subj & index_df$Treatment==session, signal] <<- status
+      }
+    }
+  }
+}
+
+
+get_rr_index <- function() {
+  index_df <<- index_df %>% 
+    mutate(RR_HR=HR) %>% 
+    mutate(RR_HR=replace(RR_HR, Participant_ID %in% c('T051', 'T092'), 0))
+}
+
+
+get_ks_index <- function() {
+  key_str_df <- read.csv(file.path(data_dir, key_data_file_name)) %>%
+    mutate(Group = recode(Group,
+                          'IH' = 'CH',
+                          'IL' = 'CL')) %>% 
+    group_by(Participant_ID, Treatment) %>% 
+    summarize(KS=1) %>% 
+    select(Participant_ID, Treatment, KS)
+    
+  
+  index_df <<- index_df %>% 
+    left_join(key_str_df, by=c('Participant_ID','Treatment')) %>% 
+    mutate(KS=replace(KS, Treatment %in% c('ST', 'DT') & is.na(KS), 0))
+}
+
+
+get_report_index <- function() {
+  performance_df <- read_csv(file.path(data_dir, performance_data_dir, performance_file_name)) %>% 
+    rename(Participant_ID=Subject,
+           Group=Condition,
+           Treatment=Session) %>%
+    group_by(Participant_ID, Treatment) %>% 
+    summarize(Report=1) %>% 
+    select(Participant_ID, Treatment, Report)
+  
+  index_df <<- index_df %>% 
+    left_join(performance_df, by=c('Participant_ID','Treatment')) %>% 
+    mutate(Report=replace(Report, Treatment %in% c('ST', 'DT') & is.na(Report), 0))
+}
+
 make_physiological_index_df <- function() {
-  index_df <<- read.csv(file.path(data_dir, index_file_name))
+  index_df <<- read.csv(file.path(data_dir, index_file_name))[c(1: index_df_row_range), ]
   filtered_subj_df <<- read.csv(file.path(data_dir, filtered_subj_file_name)) %>% 
     mutate(Session = recode_factor(Session,
                                    'RestingBaseline'='RB',
@@ -228,61 +325,24 @@ make_physiological_index_df <- function() {
                                    'DualTask'='DT',
                                    'Presentation'='PR'))
   
+  ## Get physiological index
+  get_physiological_index()
+  get_rr_index()
+  get_ks_index()
+  get_report_index()
   
   
-  for (signal in physiological_signal_list) {
-    for (subj in levels(mean_df$Subject)) {
-      for (session in levels(mean_df$Session)) {
-        ## If the mean signal is missing or NA. 
-        ## We will check if we filtered out that signal or not
-        if (is_null(mean_df[mean_df$Subject==subj & mean_df$Session==session, signal])) {
-          
-          ## If the signal is not in filtered_subj_df, it means it was not there at raw dataset
-          if (is_null(filtered_subj_df[filtered_subj_df$Subject==subj & 
-                                       filtered_subj_df$Session==session, 'Signal'])) {
-            status <- status_missing
-            
-          ## If the signal is not in filtered_subj_df, it means we discarded it
-          } else if (filtered_subj_df[filtered_subj_df$Subject==subj & 
-                                      filtered_subj_df$Session==session, 'Signal']==signal) {
-            status <- status_discarded
-          }
-          
-        } else {
-          status <- status_valid
-        }
-        
-        index_df[index_df$Participant_ID==subj & index_df$Treatment==session, signal] <<- status
-      }
-    }
-  }
+  ## Getting sum of each status(1, 0, and -1)
+  add_row_for_sum(1)
+  add_row_for_sum(0)
+  add_row_for_sum(-1)
+  # add_row_for_sum(NA)
   
-  # index_col_order <- c('Participant_ID',
-  #                      'Group',
-  #                      'Treatment',
-  #                      'PP',
-  #                      'N.EDA', 
-  #                      'BR', 
-  #                      'HR', 
-  #                      'N.HR',
-  #                      'KeyStroke',
-  #                      'RR')
-  index_df <<- rbind(index_df[index_df_row_range,], tibble("Participant_ID" = paste0("TOTAL: ", length(unique(index_df[index_df_row_range,]$Participant_ID))),
-                                     "Group"	= "-----", 
-                                     "Treatment"	= "----", 
-                                     "PP" = sum(index_df$PP == 1), 
-                                     "N.EDA"	= sum(index_df$N.EDA == 1), 
-                                     "BR" = sum(index_df$BR == 1), 
-                                     "HR" = sum(index_df$HR == 1), 
-                                     "N.HR" = sum(index_df$N.HR == 1),
-                                     "KeyStroke" = sum(index_df$KeyStroke == 1),
-                                     "RR" = sum(index_df$RR == 1)
-                                     )) 
   convert_to_csv(index_df[, index_col_order], file.path(data_dir, index_file_name))
 }
 
 make_index_df <- function() {
-  # make_initial_index_df()
+  make_initial_index_df()
   make_physiological_index_df()
 }
 
