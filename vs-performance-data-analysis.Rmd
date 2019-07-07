@@ -64,7 +64,7 @@ ets_score_long_file_name <- 'ets_score_long_final.csv'
 nlp_file_name <- 'essay_nlp_results.csv'
 writing_time_file_name <- 'writing_time_dual_task.csv'
 biographic_file_name <- 'biographic_data.csv'
-key_data_file_name <- 'Keyboard Data.csv'
+key_data_file_name <- 'key_str.csv'
 # essay_file_name <- 'essay_all.xlsx'
 
 good_subj_file_name <- 'subj_good_df.csv'
@@ -290,7 +290,7 @@ read_data <- function() {
   
   
   
-  key_str_df <<- read_csv(file.path(data_dir, final_data_dir, quantitative_data_dir, key_data_file_name)) %>% 
+  key_str_df <<- read.csv(file.path(data_dir, key_data_file_name)) %>% 
     rename(Subject=Participant_ID) %>% 
     filter(Is_Key_Up==0,
            Key=='BACK' | Key=='DELETE') %>% 
@@ -563,7 +563,7 @@ get_ets_data <- function() {
                                                'GrammarErrorsRelative'='Grammar Errors/WC',
                                                'UsageErrorsRelative'='Usage Errors/WC',
                                                'StyleErrorsRelative'='Style Errors/WC',
-                                               'DeleteKeyRelative' = 'Delete Key/CC'
+                                               'DeleteKeyRelative' = 'Delete Keys/CC'
                                                )) 
 }
 
@@ -668,11 +668,12 @@ draw_ets_plots <- function() {
     # scale_y_continuous(labels = scientific) +
     guides(fill = guide_legend(reverse=T)) +
     geom_text(
-      data    = significance_df,
-      mapping = aes(x = Inf, y = Inf, label = paste0('n = ', Subj_No)),
-      hjust   = 1.1,
-      vjust   = 1.5,
-      size    = 5
+      data     = significance_df,
+      mapping  = aes(x = Inf, y = Inf, label = paste0('n = ', Subj_No)),
+      fontface = 3,
+      hjust    = 1.1,
+      vjust    = 1.5,
+      size     = 5
     ) +
     geom_text(
       data    = significance_df,

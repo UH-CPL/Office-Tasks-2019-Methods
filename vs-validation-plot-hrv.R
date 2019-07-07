@@ -22,8 +22,7 @@ setwd(current_dir)
 
 source('common-functions.R')
 
-log_dir <- file.path(dirname(current_dir), 'log-files')
-log.file <- file.path(log_dir, paste0('hrv-missing-subj-', format(Sys.Date(), format='%m-%d-%y'), '.txt'))
+log.file <- file.path('log-files', paste0('hrv-missing-subj-', format(Sys.Date(), format='%m-%d-%y'), '.txt'))
 file.create(log.file)
 
 
