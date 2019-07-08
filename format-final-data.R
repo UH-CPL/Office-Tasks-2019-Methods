@@ -3,8 +3,8 @@
 #-------------------------#
 library(readr)
 library(dplyr)
-
-
+library(xlsx)
+library(XLConnect)
 
 
 #-------------------------#
@@ -235,7 +235,8 @@ get_physiological_index <- function() {
                                    'BaselineWriting'='ST',
                                    'StressCondition'='PM',
                                    'DualTask'='DT',
-                                   'Presentation'='PR'))
+                                   'Presentation'='PR')) 
+  
   mean_df <<- read.csv(file.path(data_dir, qc2_mean_file_name)) %>%
     mutate(Session = recode_factor(Session,
                                    'RestingBaseline'='RB',
@@ -247,24 +248,26 @@ get_physiological_index <- function() {
   for (signal in physiological_signal_list) {
     for (subj in levels(mean_df$Subject)) {
       for (session in levels(mean_df$Session)) {
+        
         ## If the mean signal is missing or NA. 
         ## We will check if we filtered out that signal or not
         if (is_null(mean_df[mean_df$Subject==subj & mean_df$Session==session, signal])) {
-          
-          ## If the signal is not in filtered_subj_df, it means it was not there at raw dataset
-          if (is_null(filtered_subj_df[filtered_subj_df$Subject==subj & 
-                                       filtered_subj_df$Session==session, 'Signal'])) {
-            status <- status_missing
-            
-            ## If the signal is not in filtered_subj_df, it means we discarded it
-          } else if (filtered_subj_df[filtered_subj_df$Subject==subj & 
-                                      filtered_subj_df$Session==session, 'Signal']==signal) {
-            status <- status_discarded
+          status <- status_missing
+          if (length(filtered_subj_df[filtered_subj_df$Subject==subj &
+                                       filtered_subj_df$Session==session, 'Signal'])!=0) {
+            # if (subj=='T113' & signal=='N.EDA') print(paste0('Session: ', session))
+            # if (subj=='T113' & signal=='N.EDA') print(filtered_subj_df[filtered_subj_df$Subject==subj &
+            #                                                              filtered_subj_df$Session==session, 'Signal'])
+            ## If the signal is in filtered_subj_df, it means we discarded it
+            if (signal %in% filtered_subj_df[filtered_subj_df$Subject==subj &
+                                 filtered_subj_df$Session==session, 'Signal']) {
+              status <- status_discarded
+            }
           }
-          
         } else {
           status <- status_valid
         }
+        # if (subj=='T113' & signal=='N.EDA') print(paste0('Session: ', session, '     Status: ', status))
         
         index_df[index_df$Participant_ID==subj & index_df$Treatment==session, signal] <<- status
       }
@@ -337,24 +340,24 @@ make_index_df <- function() {
   
   
   
-  index_col_order <- c('Participant_ID',
-                       'Group',
-                       'Treatment',
-                       'PP',
-                       'N.EDA', 
-                       'BR', 
-                       'N.HR',
-                       'HR',
-                       'RR_HR',
-                       'RR_Raw',
-                       'KS',
-                       'KS_Raw',
-                       'ReportEmail',
-                       'ReportPerformance'
-  )
-
-  
-  convert_to_csv(index_df[, index_col_order], file.path(data_dir, index_data_dir, index_file_name))
+  # index_col_order <- c('Participant_ID',
+  #                      'Group',
+  #                      'Treatment',
+  #                      'PP',
+  #                      'N.EDA', 
+  #                      'BR', 
+  #                      'N.HR',
+  #                      'HR',
+  #                      'RR_HR',
+  #                      'RR_Raw',
+  #                      'KS',
+  #                      'KS_Raw',
+  #                      'ReportEmail',
+  #                      'ReportPerformance'
+  # )
+  # 
+  # 
+  # convert_to_csv(index_df[, index_col_order], file.path(data_dir, index_data_dir, index_file_name))
   
   
   
@@ -377,22 +380,25 @@ make_index_df <- function() {
            KeyStroke,
            ReportEmail,
            ReportPerformance
-           ) %>% 
-  slice(1:index_df_row_range+1)
-    
-  convert_to_csv(index_df, file.path(data_dir, index_data_dir, index_final_file_name))
-  convert_to_csv(index_df, file.path(data_dir, final_data_dir, index_final_file_name))
+           ) 
   
+  # %>% 
+  # slice(0:index_df_row_range+1)
+    
+  convert_to_csv(index_df, file.path(data_dir, index_data_dir, index_file_name))
+  # convert_to_csv(index_df, file.path(data_dir, final_data_dir, index_final_file_name))
+  # write.xlsx(as.data.frame(index_df), file.path(data_dir, index_data_dir, 'index_final.xlsx', row.names=F))
+  # write.xlsx(as.data.frame(index_df), file.path(data_dir, final_data_dir, 'index_final.xlsx', row.names=F))
 }
 
 
 #-------------------------#
 #-------Main Program------#
 #-------------------------#
-# make_physiological_df()
-# make_performance_df()
-# make_key_str_df()
-# make_rr_df()
+make_physiological_df()
+make_performance_df()
+make_key_str_df()
+make_rr_df()
 
 make_index_df()
 
