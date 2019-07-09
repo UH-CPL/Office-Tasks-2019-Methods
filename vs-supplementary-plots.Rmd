@@ -113,6 +113,8 @@ figure_out_labels <- function(col_name) {
   if (is_match(col_name, 'HR')) { 
     return('Heart Rate [BPM]') 
   } else if (is_match(col_name, 'N.EDA')) { 
+    # return(expression(paste('log'[10], '(EDA [', mu, 'S])')))
+    # return(expression(paste('ln (EDA [', mu, 'S])'))) 
     return(expression(paste('EDA [', mu, 'S]'))) 
   } 
   return('Unknown axis')
@@ -162,6 +164,42 @@ get_mean <- function(subj, session, col_name) {
 get_eda_max_y_limit <- function(df) {
   if(max(df$Value) < 5) 5 else max(df$Value)
 }
+
+# get_eda_y_limits <- function(df) {
+#   if (max(df$Value) < 10) {
+#     c(y_min, 10)
+#   } else if (min(df$Value) > 10) {
+#     c(10, y_max)
+#   } else {
+#     c(5, 15)
+#   }
+# }
+# 
+# get_eda_y_breaks <- function(df) {
+#   if (max(df$Value) < 10) {
+#     c(0.01, 1, 5, 10)
+#   } else if (min(df$Value) > 10) {
+#     c(10, 15, 20)
+#   } else {
+#     c(5, 10, 15)
+#   }
+# }
+# 
+# get_eda_y_limits <- function(df) {
+#   if (max(df$Value) < 1) {
+#     c(y_min, 1)
+#   } else {
+#     c(min(df$Value), max(df$Value))
+#   }
+# }
+# 
+# get_eda_y_breaks <- function(df) {
+#   if (max(df$Value) < 1) {
+#     c(0.001, 0.01, 1)
+#   } else {
+#     c(1, 5, 10, y_max)
+#   }
+# }
 
 get_hr_y_min_lim <- function(df) {
   if(min(df$Value) < 50) min(df$Value) else 50
@@ -348,6 +386,13 @@ draw_plots <- function() {
           xlab('Time [s]') +
           ylab(figure_out_labels(eda_col_name)) +
           ylim(0, get_eda_max_y_limit(eda_df)) 
+          # scale_y_continuous(trans='log10',
+          #                    limits=get_eda_y_limits(eda_df),
+          #                    breaks=get_eda_y_breaks(eda_df))
+          # scale_y_continuous(trans='log10',
+          #                    limits=c(y_min, y_max),
+          #                    breaks=c(0.01, 1, 5, 20))
+        
           # geom_hline(yintercept=get_session_mean(session, eda_new_col_name),
           #            size=1.2,
           #            color="darkgreen")
