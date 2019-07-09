@@ -147,10 +147,14 @@ generate_time_series_plot <- function() {
     session_name <- session_list[sess_idx]
     
     session_raw_df <- raw_df %>% 
-      filter(Session == session_name)
+      filter(Session == session_name) 
+    # %>% 
+    #   slice(1:10)
     
     session_filtered_df <- filtered_df %>% 
-      filter(Session == session_name)
+      filter(Session == session_name) 
+    # %>% 
+    #   slice(1:10)
     
     
     if (session_name == 'DT') {
@@ -221,7 +225,8 @@ generate_time_series_plot <- function() {
       
       if (sess_idx==1) {
         raw_data_plot <- raw_data_plot + 
-          ggtitle('Original RR sets')
+          # ggtitle('Original RR sets')
+          ggtitle('RR matched to Chest HR sets')
       }
       
       #---- SAVING THE PLOTS IN A LIST TO MAKE A GRID GRAPH ----#
