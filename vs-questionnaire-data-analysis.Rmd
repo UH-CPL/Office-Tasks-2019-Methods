@@ -317,13 +317,17 @@ draw_group_bar_chart_nasa_tlx <- function() {
       summarize(disagree_freq = sum(Frequency))
 
     freq_df <- merge(agree_df, disagree_df, by='Question')
-    
     total_response <- nrow(nasa_tlx_df)
+    
     prop_test <- prop.test(c(freq_df$agree_freq, freq_df$disagree_freq),
             c(total_response, total_response),
             p = NULL,
             alternative = 'greater',
             correct = T)
+    
+    message(total_response)
+    message(freq_df)
+    message(prop_test)
 
     nasa_bar_plot <- get_nasa_bar_plot_df(freq_df) %>%
       mutate(Options=factor(Options, c('disagree_freq', 'agree_freq'))) %>% 
@@ -1156,8 +1160,8 @@ read_data()
 
 <!-- BIOGRAPHIC DISTRIBUTION -->
 ```{r echo=FALSE, warning = FALSE, message = FALSE}
-extract_biographic_info()
-get_biographic_distribution()
+# extract_biographic_info()
+# get_biographic_distribution()
 ```
 
 
@@ -1178,34 +1182,34 @@ draw_group_bar_chart_nasa_tlx()
 <!-- Big Five Inventory-->
 \newpage
 ```{r echo=FALSE, warning = FALSE, message = FALSE}
-extract_bfi_score()
-draw_bfi_plot()
+# extract_bfi_score()
+# draw_bfi_plot()
 ```
 
 <!-- Emotion Regulation Plots -->
 \newpage
 ```{r echo=FALSE, warning = FALSE, message = FALSE}
-extract_erq_score()
-draw_erq_plot()
+# extract_erq_score()
+# draw_erq_plot()
 ```
 
 <!-- Perceived Stress Scale Plots -->
 \newpage
 ```{r echo=FALSE, warning = FALSE, message = FALSE}
-extract_pss_score()
-draw_pss_plot()
+# extract_pss_score()
+# draw_pss_plot()
 ```
 
 <!-- Combine PLots -->
 \newpage
 ```{r echo=FALSE, warning = FALSE, message = FALSE}
-combine_psychometric_plots()
+# combine_psychometric_plots()
 ```
 
 <!-- Rename Column Names Final Questionnaire Data -->
 \newpage
 ```{r echo=FALSE, warning = FALSE, message = FALSE}
-modify_final_df()
+# modify_final_df()
 ```
 
 
