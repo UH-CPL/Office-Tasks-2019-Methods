@@ -686,7 +686,7 @@ draw_biographic_distribution <- function(col_name, plot_label) {
                  size=1)
   }
   
-  plot <- arrangeGrob(plot, top = textGrob(toupper(plot_label),
+  plot <- arrangeGrob(plot, top = textGrob(tolower(plot_label),
                                         x = unit(0, "npc"),
                                         y = unit(1, "npc"),
                                         vjust = 2, 
@@ -1076,7 +1076,7 @@ combine_psychometric_plots <- function() {
                                 NULL,
                                 pss_plot, 
                                 NULL,
-                                labels=c('B', '', 'C', ''),
+                                labels=c('b', '', 'c', ''),
                                 label_size=18,
                                 cols=1,
                                 align='h',
@@ -1086,7 +1086,7 @@ combine_psychometric_plots <- function() {
                           NULL,
                           right_side_plots, 
                           rel_widths =c(1, 0.05, 1),
-                          labels=c('A', '', ''), 
+                          labels=c('a', '', ''), 
                           label_size=18,
                           ncol=3)
   save_plot('personality_plot_combined', final_plot)
@@ -1160,8 +1160,8 @@ read_data()
 
 <!-- BIOGRAPHIC DISTRIBUTION -->
 ```{r echo=FALSE, warning = FALSE, message = FALSE}
-# extract_biographic_info()
-# get_biographic_distribution()
+extract_biographic_info()
+get_biographic_distribution()
 ```
 
 
@@ -1169,8 +1169,10 @@ read_data()
 <!-- NASA TASK PLOTS and PROPORTION TEST-->
 \newpage
 ```{r echo=FALSE, warning = FALSE, message = FALSE}
-extract_nasa_tlx_score()
-draw_group_bar_chart_nasa_tlx()
+# extract_nasa_tlx_score()
+# draw_group_bar_chart_nasa_tlx()
+
+
 #### draw_stress_ques_bar_plot()
 #### get_proportion_test_nasa_tlx()
 ```
@@ -1182,28 +1184,28 @@ draw_group_bar_chart_nasa_tlx()
 <!-- Big Five Inventory-->
 \newpage
 ```{r echo=FALSE, warning = FALSE, message = FALSE}
-# extract_bfi_score()
-# draw_bfi_plot()
+extract_bfi_score()
+draw_bfi_plot()
 ```
 
 <!-- Emotion Regulation Plots -->
 \newpage
 ```{r echo=FALSE, warning = FALSE, message = FALSE}
-# extract_erq_score()
-# draw_erq_plot()
+extract_erq_score()
+draw_erq_plot()
 ```
 
 <!-- Perceived Stress Scale Plots -->
 \newpage
 ```{r echo=FALSE, warning = FALSE, message = FALSE}
-# extract_pss_score()
-# draw_pss_plot()
+extract_pss_score()
+draw_pss_plot()
 ```
 
 <!-- Combine PLots -->
 \newpage
 ```{r echo=FALSE, warning = FALSE, message = FALSE}
-# combine_psychometric_plots()
+combine_psychometric_plots()
 ```
 
 <!-- Rename Column Names Final Questionnaire Data -->

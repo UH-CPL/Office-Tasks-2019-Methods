@@ -45,7 +45,7 @@ common_col_list <- c('Subject', 'Condition', 'Session')
 hr_signal_list <- c('HR', 'N.HR')
 hr_col_list <- c(common_col_list, hr_signal_list)
 
-plot_label <- c('A1', 'A2', 'B1', 'B2')
+plot_label <- c('a1', 'a2', 'b1', 'b2')
 
 plot_list <- list()
 test_plot_list <- list()
@@ -132,6 +132,7 @@ get_scatter_plot <- function(df, idx, x_col, y_col, x_label, y_label, title, fil
          label=annot_label,
          fontface = 'italic', 
          size = 8) +
+    theme_bw() +
     theme(text = element_text(size=22),
           axis.text = element_text(size = 18),
           plot.margin = unit(c(1, 0.5, 1, 0.5), "lines"),  ##top, right, bottom, left
@@ -139,7 +140,7 @@ get_scatter_plot <- function(df, idx, x_col, y_col, x_label, y_label, title, fil
           panel.grid.minor = element_blank(),
           axis.line = element_line(colour = "black")) 
   
-  plot <- arrangeGrob(plot, top = textGrob(toupper(plot_label[length(plot_list)+1]),
+  plot <- arrangeGrob(plot, top = textGrob(tolower(plot_label[length(plot_list)+1]),
                                         x = unit(0, "npc"),
                                         y = unit(1, "npc"),
                                         vjust = 1.8, 
@@ -210,6 +211,7 @@ generate_hr_plot <- function(idx) {
     xlim(-10, 50) +
     xlab('|Chest HR - Wrist HR| [BPM]') +
     ylab('PDF') +
+    theme_bw() +
     theme(text = element_text(size=22),
           axis.text = element_text(size = 18),
           plot.margin = unit(c(1, 0.5, 1, 0.5), "lines"),  ##top, right, bottom, left
@@ -227,7 +229,7 @@ generate_hr_plot <- function(idx) {
     }
 
   
-  plot <- arrangeGrob(plot, top = textGrob(toupper(plot_label[length(plot_list)+1]),
+  plot <- arrangeGrob(plot, top = textGrob(tolower(plot_label[length(plot_list)+1]),
                                         x = unit(0, "npc"),
                                         y = unit(1, "npc"),
                                         vjust = 1.8, 
@@ -247,6 +249,7 @@ generate_hr_plot <- function(idx) {
 ## Regression Plot
 ```{r echo=FALSE, warning = FALSE, message = FALSE}
 read_data()
+
 for (idx in 1:length(data_file_names)) {
   generate_hr_plot(idx)
   # generate_hr_test_plot(idx)
