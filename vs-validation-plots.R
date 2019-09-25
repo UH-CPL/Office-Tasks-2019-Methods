@@ -279,7 +279,7 @@ plot2 <- function(testing_df, test_type, col, cond, pdf_file_name, plot_label) {
   # print(gg) 
   # save_plot(pdf_file_name, gg, base_height = 10, base_width = 12)
   
-  gg <- arrangeGrob(gg, top = textGrob(toupper(plot_label),
+  gg <- arrangeGrob(gg, top = textGrob(tolower(plot_label),
                                         x = unit(0, "npc"),
                                         y = unit(1, "npc"),
                                         # vjust = 2, 
@@ -814,7 +814,12 @@ for (signal_name in signal_name_list) {
   for (col in measure_vec) {
     lst <- test_time(cond, col)
     if (!is.na(lst)) {
-      plot2(as.tibble(lst[[1]]), as.character(lst[[2]]), as.character(lst[[3]]), as.character(lst[[4]]), 'BH_boxplot.pdf', 'A')
+      plot2(as.tibble(lst[[1]]), 
+            as.character(lst[[2]]), 
+            as.character(lst[[3]]), 
+            as.character(lst[[4]]), 
+            'BH_boxplot.pdf', 
+            'a')
       # interpret_results_after(cond, col)
       # plot.new()
     }
@@ -832,7 +837,12 @@ for (signal_name in signal_name_list) {
   for (col in measure_vec) {
     lst <- test_time(cond, col)
     if (!is.na(lst)) {
-      plot2(as.tibble(lst[[1]]), as.character(lst[[2]]), as.character(lst[[3]]), as.character(lst[[4]]), 'BL_boxplot.pdf', 'B')
+      plot2(as.tibble(lst[[1]]), 
+            as.character(lst[[2]]), 
+            as.character(lst[[3]]), 
+            as.character(lst[[4]]), 
+            'BL_boxplot.pdf', 
+            'b')
       # interpret_results_after(cond, col)
       # plot.new()
     }
@@ -866,7 +876,12 @@ for (signal_name in signal_name_list) {
     lst <- test_time(cond, col)
     if (!is.na(lst)) {
       # That's right, it all gets fed into the Plot 2 function, then printed out via the `interpret_results_after` function call below!
-      plot2(as.tibble(lst[[1]]), as.character(lst[[2]]), as.character(lst[[3]]), as.character(lst[[4]]), 'IH_boxplot.pdf', 'C')
+      plot2(as.tibble(lst[[1]]), 
+            as.character(lst[[2]]), 
+            as.character(lst[[3]]), 
+            as.character(lst[[4]]), 
+            'IH_boxplot.pdf', 
+            'c')
       if (!is.na(as.character(lst[[5]]))) {
         cat(as.character(lst[[5]]))
         lst[[5]] <- NA
@@ -886,7 +901,12 @@ for (signal_name in signal_name_list) {
   for (col in measure_vec) {
     lst <- test_time(cond, col)
     if (!is.na(lst)) {
-      plot2(as.tibble(lst[[1]]), as.character(lst[[2]]), as.character(lst[[3]]), as.character(lst[[4]]), 'IL_boxplot.pdf', 'D')
+      plot2(as.tibble(lst[[1]]), 
+            as.character(lst[[2]]), 
+            as.character(lst[[3]]), 
+            as.character(lst[[4]]), 
+            'IL_boxplot.pdf', 
+            'd')
       # interpret_results_after(cond, col)
       # plot.new()
     }
@@ -895,7 +915,11 @@ for (signal_name in signal_name_list) {
   grid_plot <- do.call("grid.arrange", c(plot_list, ncol=2))
   
   # plot_path <- file.path(plots_dir, paste0(tolower(signal_name), '-validation-plot-', format(Sys.Date(), format='%m-%d-%y'), '.pdf'))
-  plot_path <- file.path(plots_dir, paste0(replace_dots(tolower(signal_name)), '-validation-plot', file_name_part_sensor_comparison, file_name_part_outlier))
+  plot_path <- file.path(plots_dir, 
+                         paste0(replace_dots(tolower(signal_name)), 
+                                '-validation-plot', 
+                                file_name_part_sensor_comparison, 
+                                file_name_part_outlier))
   save_plot(plot_path, grid_plot)
   
 

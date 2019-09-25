@@ -286,9 +286,13 @@ splitSessions <- function(session_dir, subj_name) {
   stress_cond_start_time <- convert_date(subj_interface_df$Stress.Condition.Timestamp[1], subj_interface_date_format)
   dual_task_start_time <- convert_date(subj_interface_df$Dual.Essay.Timestamp[1], subj_interface_date_format)
   
+  
+  ## This is for syncing the year!!!
   date(baseline_essay_start_time) <- as.Date(rb_start_time)
   date(stress_cond_start_time) <- as.Date(rb_start_time)
   date(dual_task_start_time) <- as.Date(rb_start_time)
+  
+  
   
   baseline_essay_end_time <- baseline_essay_start_time + 5*60
   stress_cond_end_time <- stress_cond_start_time + 5*60
