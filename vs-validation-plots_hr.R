@@ -11,7 +11,7 @@ library(gsubfn)
 
 
 # signal_name_list <- c('PP')
-signal_name_list <- c('PP', 'N.EDA', 'BR', 'HR', 'N.HR')
+signal_name_list <- c('HR', 'N.HR')
 
 
 ## CHANGE THIS!!!!
@@ -798,6 +798,7 @@ figure_out_title <- function(col_name, condition, test_type) {
 find_subjects()
 
 
+combined_plot_list <- list()
 
 for (signal_name in signal_name_list) {
   plot_list <- list()
@@ -913,6 +914,7 @@ for (signal_name in signal_name_list) {
   }
   
   grid_plot <- do.call("grid.arrange", c(plot_list, ncol=2))
+  combined_plot_list[[length(combined_plot_list)+1]] <- grid_plot
   
   # plot_path <- file.path(plots_dir, paste0(tolower(signal_name), '-validation-plot-', format(Sys.Date(), format='%m-%d-%y'), '.pdf'))
   plot_path <- file.path(plots_dir, 
@@ -920,7 +922,7 @@ for (signal_name in signal_name_list) {
                                 '-validation-plot', 
                                 file_name_part_sensor_comparison, 
                                 file_name_part_outlier))
-  save_plot(plot_path, grid_plot)
+  # save_plot(plot_path, grid_plot)
   
 
   
@@ -928,4 +930,13 @@ for (signal_name in signal_name_list) {
   # write.table(result_df, file = file.path(data_set_dir, "result_df_first_phase.csv"), row.names=F, sep = ',')
   # write.table(result_df, file = file.path(project_dir, data_dir, "result_df_first_phase.csv"), row.names=F, sep = ',')
 }
+
+
+combined_hr_plot <- plot_grid(combined_plot_list[1],
+                              NULL,
+                              combined_plot_list[2],
+                              rel_heights = c(1, 0.1, 1),
+                              ncol=1
+                              )
+save_plot(file.path(plots_dir, 'c-hr-w-hr-validation-plot'), combined_plot_list, default_height=22)
 
