@@ -10,7 +10,6 @@ library(cowplot)
 library(gsubfn)
 
 
-# signal_name_list <- c('PP')
 signal_name_list <- c('HR', 'N.HR')
 
 
@@ -39,7 +38,7 @@ setwd(project_dir)
 data_dir <- 'data'
 plots_dir <- 'plots'
 
-
+label_no <- 1
 
 filtered_file_name <- 'full_df_second_phase_filtered.csv'
 
@@ -279,7 +278,7 @@ plot2 <- function(testing_df, test_type, col, cond, pdf_file_name, plot_label) {
   # print(gg) 
   # save_plot(pdf_file_name, gg, base_height = 10, base_width = 12)
   
-  gg <- arrangeGrob(gg, top = textGrob(tolower(plot_label),
+  gg <- arrangeGrob(gg, top = textGrob(tolower(paste0(plot_label, label_no)),
                                         x = unit(0, "npc"),
                                         y = unit(1, "npc"),
                                         # vjust = 2, 
@@ -913,7 +912,10 @@ for (signal_name in signal_name_list) {
     }
   }
   
-  grid_plot <- do.call("grid.arrange", c(plot_list, ncol=2))
+  # grid_plot <- do.call("grid.arrange", c(plot_list, ncol=2))
+  grid_plot <- plot_grid(plotlist=plot_list,
+                         # rel_heights = c(1, 0.1, 1),
+                         ncol=2)
   combined_plot_list[[length(combined_plot_list)+1]] <- grid_plot
   
   # plot_path <- file.path(plots_dir, paste0(tolower(signal_name), '-validation-plot-', format(Sys.Date(), format='%m-%d-%y'), '.pdf'))
@@ -929,14 +931,17 @@ for (signal_name in signal_name_list) {
   # write.table(final_testing_df, file = file.path(data_set_dir, "testing_df.csv"), row.names=F, sep = ',')
   # write.table(result_df, file = file.path(data_set_dir, "result_df_first_phase.csv"), row.names=F, sep = ',')
   # write.table(result_df, file = file.path(project_dir, data_dir, "result_df_first_phase.csv"), row.names=F, sep = ',')
+  label_no=label_no+1
 }
 
-
-combined_hr_plot <- plot_grid(combined_plot_list[1],
+# print(combined_plot_list[1])
+combined_hr_plot <- plot_grid(
+                              # plotlist=combined_plot_list,
+                              plot_grid(plotlist=combined_plot_list[1]),
                               NULL,
-                              combined_plot_list[2],
-                              rel_heights = c(1, 0.1, 1),
+                              plot_grid(plotlist=combined_plot_list[2]),
+                              rel_heights = c(1, 0.2, 1),
                               ncol=1
                               )
-save_plot(file.path(plots_dir, 'c-hr-w-hr-validation-plot'), combined_plot_list, default_height=22)
+save_plot(file.path(plots_dir, 'c-hr-w-hr-validation-plot'), combined_hr_plot, default_height=22)
 
