@@ -61,8 +61,8 @@ Packages are available on CRAN and can be installed using a simple call to `inst
 	- common-functions.R
 		- Useful functions that are called from almost all scripts.
 	- us-filter-pp.R
-	    - Removes noise from PP signals. It is called from dc-curate-and-process-physiological-data.R
+		- Removes noise from PP signals. It is called from dc-curate-and-process-physiological-data.R
 	- us-down-sample-pp.R
-	    - Downsamples data to 1 fps. It is called from dc-curate-and-process-physiological-data.R
+	    	- Downsamples data to 1 fps. It is called from dc-curate-and-process-physiological-data.R
 	- us-score-psychometrics.R
-	    - Scores psychometric variables. It is called from vs-questionnaire-data-analysis.Rmd
+	    	- Scores psychometric variables. It is called from vs-questionnaire-data-analysis.Rmd
